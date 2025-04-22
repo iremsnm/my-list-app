@@ -1,15 +1,13 @@
 import pandas as pd
 import streamlit as st
 import json
-from io import StringIO
+from io import StringIO, BytesIO
 from datetime import datetime
 
 st.title("チェックリストアプリ")
 
-# --- CSVファイルアップロード ---
 uploaded_file = st.file_uploader("CSVファイルをアップロードしてください", type=["csv"])
 
-# --- 初期化・状態読み込み ---
 if uploaded_file is not None:
     df = pd.read_csv(uploaded_file, header=None, names=["item"])
     df.index = df.index + 1
@@ -19,7 +17,6 @@ if uploaded_file is not None:
 
     df["checked"] = st.session_state.checked
 
-    # --- チェック処理 ---
     checked_indices = [i for i, val in enumerate(df["checked"], 1) if val]
     latest_checked = checked_indices[-1] if checked_indices else 1
 
@@ -32,11 +29,9 @@ if uploaded_file is not None:
     end = min((first_unchecked or latest_checked) + 5, len(df))
     sub_df = df.loc[start:end]
 
-    # --- 残数表示 ---
     unchecked_count = df["checked"].value_counts().get(False, 0)
     st.markdown(f"**残り: {unchecked_count} 件**")
 
-    # --- 各行の表示 ---
     for idx, row in sub_df.iterrows():
         text = f"{idx}. {row['item']}"
         if row["checked"]:
@@ -48,22 +43,24 @@ if uploaded_file is not None:
         else:
             st.markdown(text)
 
-    # --- リセット ---
     if st.button("リセット", help="チェックをすべて未チェックに戻します"):
         st.session_state.checked = [False] * len(df)
         st.rerun()
 
-    # --- JSON保存：日時付きファイル名 ---
+    # --- 保存処理（確実なファイル名付き） ---
     now = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"check_state_{now}.json"
+    json_bytes = json.dumps(st.session_state.checked, indent=2, ensure_ascii=False).encode("utf-8")
+    buffer = BytesIO(json_bytes)
+
     st.download_button(
         label="チェック状態を保存（JSON）",
-        data=json.dumps(st.session_state.checked, indent=2),
+        data=buffer,
         file_name=filename,
         mime="application/json"
     )
 
-    # --- JSON読み込み（下部）---
+    # --- 読み込み（下部に配置） ---
     st.markdown("---")
     st.subheader("チェック状態の読み込み")
     json_file = st.file_uploader("チェック状態JSONを読み込む（任意）", type=["json"], key="json")
@@ -75,4 +72,4 @@ if uploaded_file is not None:
             st.session_state.checked = loaded_state
             st.rerun()
         else:
-            st.warning("JSONとCSVの行数が一致しないため、チェック状態を無視しました。")
+            st.warning("JSONとCSVの行数が一致しません。")
