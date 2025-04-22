@@ -50,6 +50,7 @@ if uploaded_file is not None:
         st.rerun()
 
     # --- 保存リンク生成 ---
+    st.markdown("---")
     japan_tz = pytz.timezone('Asia/Tokyo')
     now = datetime.now(japan_tz).strftime("%Y%m%d_%H-%M-%S")
     filename = f"check_state_{now}.json"
@@ -61,7 +62,6 @@ if uploaded_file is not None:
     st.markdown(href, unsafe_allow_html=True)
 
     # --- 読み込み（下部） ---
-    st.markdown("---")
     st.subheader("保存状態の読み込み")
     json_file = st.file_uploader("中途データ読込み", type=["json"], key="json")
 
