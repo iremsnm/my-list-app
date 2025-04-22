@@ -6,23 +6,6 @@ from datetime import datetime
 import pytz
 import base64
 
-# ページ先頭などに以下のCSSを追加しておく
-st.markdown("""
-    <style>
-    div.stButton > button {
-        background-color: #f0f0f0;
-        color: black;
-        border: 1px solid #ccc;
-        padding: 0.75em 1em;
-        width: 100%;
-    }
-    div.stButton > button:hover {
-        background-color: #e0e0e0;
-        color: black;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
 
 st.title("check list")
 
@@ -51,6 +34,29 @@ if uploaded_file is not None:
 
     unchecked_count = df["checked"].value_counts().get(False, 0)
     st.markdown(f"**残り: {unchecked_count} 工程**")
+
+
+
+    # カスタムスタイルを追加（赤く見えないように）
+st.markdown("""
+    <style>
+    div.stButton > button:first-child {
+        background-color: #f0f0f0;
+        color: black;
+        border: 1px solid #ccc;
+        padding: 0.5em 1em;
+        width: 100%;
+        text-align: left;
+    }
+    div.stButton > button:first-child:hover {
+        background-color: #e0e0e0;
+        color: black;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+
+
 
     for idx, row in sub_df.iterrows():
         text = f"{idx}. {row['item']}"
