@@ -1,3 +1,11 @@
+import pandas as pd
+import streamlit as st
+import json
+from io import StringIO
+from datetime import datetime
+import pytz
+import base64
+
 # ページ先頭などに以下のCSSを追加しておく
 st.markdown("""
     <style>
@@ -15,13 +23,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-import pandas as pd
-import streamlit as st
-import json
-from io import StringIO
-from datetime import datetime
-import pytz
-import base64
 
 st.title("check list")
 
