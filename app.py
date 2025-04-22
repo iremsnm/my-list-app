@@ -1,3 +1,20 @@
+# ページ先頭などに以下のCSSを追加しておく
+st.markdown("""
+    <style>
+    div.stButton > button {
+        background-color: #f0f0f0;
+        color: black;
+        border: 1px solid #ccc;
+        padding: 0.75em 1em;
+        width: 100%;
+    }
+    div.stButton > button:hover {
+        background-color: #e0e0e0;
+        color: black;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 import pandas as pd
 import streamlit as st
 import json
