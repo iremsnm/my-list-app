@@ -50,8 +50,6 @@ if uploaded_file is not None:
         st.rerun()
 
     # --- 保存リンク生成 ---
-    st.markdown("---")
-
     japan_tz = pytz.timezone('Asia/Tokyo')
     now = datetime.now(japan_tz).strftime("%Y%m%d_%H-%M-%S")
     filename = f"check_state_{now}.json"
@@ -60,7 +58,7 @@ if uploaded_file is not None:
     # base64 エンコードしてダウンロードリンク生成
     b64 = base64.b64encode(json_data.encode()).decode()
     href = f'<a href="data:application/json;base64,{b64}" download="{filename}">中途データを保存</a>'
-    st.markdown(href, unsafe_allow_html=True)
+    
 
     # --- 読み込み（下部） ---
     st.markdown("---")
