@@ -2,8 +2,9 @@ import pandas as pd
 import streamlit as st
 import json
 from io import StringIO
+from datetime import datetime
 
-st.title("check list")
+st.title("チェックリストアプリ")
 
 # --- CSVファイルアップロード ---
 uploaded_file = st.file_uploader("CSVファイルをアップロードしてください", type=["csv"])
@@ -13,13 +14,12 @@ if uploaded_file is not None:
     df = pd.read_csv(uploaded_file, header=None, names=["item"])
     df.index = df.index + 1
 
-    # チェック状態の初期化
     if "checked" not in st.session_state or len(st.session_state.checked) != len(df):
         st.session_state.checked = [False] * len(df)
 
     df["checked"] = st.session_state.checked
 
-    # --- チェック済み・未チェックの処理 ---
+    # --- チェック処理 ---
     checked_indices = [i for i, val in enumerate(df["checked"], 1) if val]
     latest_checked = checked_indices[-1] if checked_indices else 1
 
@@ -36,7 +36,7 @@ if uploaded_file is not None:
     unchecked_count = df["checked"].value_counts().get(False, 0)
     st.markdown(f"**残り: {unchecked_count} 件**")
 
-    # --- チェック表示 ---
+    # --- 各行の表示 ---
     for idx, row in sub_df.iterrows():
         text = f"{idx}. {row['item']}"
         if row["checked"]:
@@ -53,17 +53,20 @@ if uploaded_file is not None:
         st.session_state.checked = [False] * len(df)
         st.rerun()
 
-    # --- JSON保存ボタン ---
+    # --- JSON保存：日時付きファイル名 ---
+    now = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"check_state_{now}.json"
     st.download_button(
-        label="保存",
+        label="チェック状態を保存（JSON）",
         data=json.dumps(st.session_state.checked, indent=2),
-        file_name="check_state.json",
+        file_name=filename,
         mime="application/json"
     )
 
-    # --- JSON読み込み（リセットボタンの下に移動）---
+    # --- JSON読み込み（下部）---
     st.markdown("---")
-    json_file = st.file_uploader("中途データ読み込み（任意）", type=["json"], key="json")
+    st.subheader("チェック状態の読み込み")
+    json_file = st.file_uploader("チェック状態JSONを読み込む（任意）", type=["json"], key="json")
 
     if json_file is not None:
         json_str = StringIO(json_file.getvalue().decode("utf-8")).read()
