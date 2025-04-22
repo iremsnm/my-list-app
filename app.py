@@ -3,7 +3,7 @@ import streamlit as st
 import json
 from io import StringIO
 
-st.title("チェックリストアプリ")
+st.title("check list")
 
 # --- CSVファイルアップロード ---
 uploaded_file = st.file_uploader("CSVファイルをアップロードしてください", type=["csv"])
@@ -63,8 +63,8 @@ if uploaded_file is not None:
 
     # --- JSON読み込み（リセットボタンの下に移動）---
     st.markdown("---")
-    st.subheader("チェック状態の読み込み")
-    json_file = st.file_uploader("チェック状態JSONを読み込む（任意）", type=["json"], key="json")
+    st.subheader("中途データ読み込み")
+    json_file = st.file_uploader("中途データ読み込み（任意）", type=["json"], key="json")
 
     if json_file is not None:
         json_str = StringIO(json_file.getvalue().decode("utf-8")).read()
