@@ -63,7 +63,6 @@ if uploaded_file is not None:
 
     # --- JSON読み込み（リセットボタンの下に移動）---
     st.markdown("---")
-    st.subheader("中途データ読み込み")
     json_file = st.file_uploader("中途データ読み込み（任意）", type=["json"], key="json")
 
     if json_file is not None:
