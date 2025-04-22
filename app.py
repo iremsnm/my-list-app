@@ -8,24 +8,13 @@ st.title("チェックリストアプリ")
 # --- CSVファイルアップロード ---
 uploaded_file = st.file_uploader("CSVファイルをアップロードしてください", type=["csv"])
 
-# --- JSONファイル読み込み ---
-json_file = st.file_uploader("チェック状態JSONを読み込む（任意）", type=["json"])
-
-# --- 初期化 ---
+# --- 初期化・状態読み込み ---
 if uploaded_file is not None:
     df = pd.read_csv(uploaded_file, header=None, names=["item"])
     df.index = df.index + 1
 
-    # JSON状態を読み込んだ場合
-    if json_file is not None:
-        json_str = StringIO(json_file.getvalue().decode("utf-8")).read()
-        loaded_state = json.loads(json_str)
-        if len(loaded_state) == len(df):
-            st.session_state.checked = loaded_state
-        else:
-            st.warning("JSONとCSVの行数が一致しないため、チェック状態を無視します。")
-            st.session_state.checked = [False] * len(df)
-    elif "checked" not in st.session_state:
+    # チェック状態の初期化
+    if "checked" not in st.session_state or len(st.session_state.checked) != len(df):
         st.session_state.checked = [False] * len(df)
 
     df["checked"] = st.session_state.checked
@@ -71,3 +60,17 @@ if uploaded_file is not None:
         file_name="check_state.json",
         mime="application/json"
     )
+
+    # --- JSON読み込み（リセットボタンの下に移動）---
+    st.markdown("---")
+    st.subheader("チェック状態の読み込み")
+    json_file = st.file_uploader("チェック状態JSONを読み込む（任意）", type=["json"], key="json")
+
+    if json_file is not None:
+        json_str = StringIO(json_file.getvalue().decode("utf-8")).read()
+        loaded_state = json.loads(json_str)
+        if len(loaded_state) == len(df):
+            st.session_state.checked = loaded_state
+            st.rerun()
+        else:
+            st.warning("JSONとCSVの行数が一致しないため、チェック状態を無視しました。")
