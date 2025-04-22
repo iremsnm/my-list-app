@@ -39,9 +39,10 @@ if uploaded_file is not None:
         if row["checked"]:
             st.markdown(f"<span style='color: gray;'>{text}</span>", unsafe_allow_html=True)
         elif idx == first_unchecked:
-            if st.button(text, key=idx):
+            if st.button(text, key=idx, help="クリックしてチェック", use_container_width=True):
                 st.session_state.checked[idx - 1] = True
                 st.rerun()
+
         else:
             st.markdown(text)
 
