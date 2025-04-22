@@ -28,8 +28,8 @@ if uploaded_file is not None:
         first_unchecked = None
 
     # 表示範囲の計算（最新チェックの前後10件）
-    start = max(latest_checked - 10, 1)
-    end = min((first_unchecked or latest_checked) + 10, len(df))
+    start = max(latest_checked - 5, 1)
+    end = min((first_unchecked or latest_checked) + 5, len(df))
     sub_df = df.loc[start:end]
 
     # 残り件数の表示
