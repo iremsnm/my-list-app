@@ -1,11 +1,14 @@
 import pandas as pd
 import streamlit as st
 import json
-from io import StringIO, BytesIO
+from io import StringIO
 from datetime import datetime
-import pytz  # 追加
+import pytz
 
 st.title("check list")
+
+# 📌 通常のブラウザで開くように案内
+st.info("⚠️ JSON保存がうまくいかない場合は、Safari や Chrome など通常のブラウザで開いてください。")
 
 uploaded_file = st.file_uploader("CSVファイルをアップロードしてください", type=["csv"])
 
@@ -48,20 +51,13 @@ if uploaded_file is not None:
         st.session_state.checked = [False] * len(df)
         st.rerun()
 
-    # --- 保存処理（日本時間付きファイル名） ---
-    japan_tz = pytz.timezone('Asia/Tokyo')  # 日本時間（JST）を設定
-    now = datetime.now(japan_tz).strftime("%Y%m%d_%H-%M-%S")
-    filename = f"check_state_{now}.json"
-    json_bytes = json.dumps(st.session_state.checked, indent=2, ensure_ascii=False).encode("utf-8")
-    buffer = BytesIO(json_bytes)
-    buffer.seek(0)  # これを追加！
-
-    st.download_button(
-        label="中途データを生成・保存",
-        data=buffer,
-        file_name=filename,
-        mime="application/json"
-    )
+    # --- JSON状態のコピー用出力 ---
+    japan_tz = pytz.timezone('Asia/Tokyo')
+    now = datetime.now(japan_tz).strftime("%Y/%m/%d %H:%M:%S")
+    st.markdown("### ✅ 現在のチェック状態を保存（手動コピー）")
+    st.caption(f"保存日時: {now}")
+    json_str = json.dumps(st.session_state.checked, indent=2, ensure_ascii=False)
+    st.text_area("以下をコピーして保存してください（メモ帳などに貼り付けて保存できます）", value=json_str, height=200)
 
     # --- 読み込み（下部に配置） ---
     st.markdown("---")
