@@ -63,7 +63,6 @@ if uploaded_file is not None:
     st.markdown(href, unsafe_allow_html=True)
 
     # --- 読み込み（下部） ---
-    st.subheader("保存状態の読み込み")
     json_file = st.file_uploader("中途データ読込み", type=["json"], key="json")
 
     if json_file is not None:
