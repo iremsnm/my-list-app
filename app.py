@@ -55,7 +55,7 @@ if uploaded_file is not None:
 
     # --- JSON保存ボタン ---
     st.download_button(
-        label="チェック状態を保存（JSON）",
+        label="保存",
         data=json.dumps(st.session_state.checked, indent=2),
         file_name="check_state.json",
         mime="application/json"
