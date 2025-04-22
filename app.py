@@ -4,7 +4,7 @@ import json
 from io import StringIO, BytesIO
 from datetime import datetime
 
-st.title("チェックリストアプリ")
+st.title("check list")
 
 uploaded_file = st.file_uploader("CSVファイルをアップロードしてください", type=["csv"])
 
@@ -54,7 +54,7 @@ if uploaded_file is not None:
     buffer = BytesIO(json_bytes)
 
     st.download_button(
-        label="チェック状態を保存（JSON）",
+        label="中途データを保存",
         data=buffer,
         file_name=filename,
         mime="application/json"
@@ -62,8 +62,7 @@ if uploaded_file is not None:
 
     # --- 読み込み（下部に配置） ---
     st.markdown("---")
-    st.subheader("チェック状態の読み込み")
-    json_file = st.file_uploader("チェック状態JSONを読み込む（任意）", type=["json"], key="json")
+    json_file = st.file_uploader("中途データ読込み", type=["json"], key="json")
 
     if json_file is not None:
         json_str = StringIO(json_file.getvalue().decode("utf-8")).read()
