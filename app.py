@@ -41,29 +41,6 @@ if uploaded_file is not None:
             st.markdown(f"<span style='color: gray;'>{text}</span>", unsafe_allow_html=True)
         elif idx == first_unchecked:
             
-
-
-            # カスタムスタイルを追加（赤く見えないように）
-            st.markdown("""
-                <style>
-                div.stButton > button:first-child {
-                    background-color: #f0f0f0;
-                    color: black;
-                    border: 1px solid #ccc;
-                    padding: 0.5em 1em;
-                    width: 100%;
-                    text-align: left;
-                }
-                div.stButton > button:first-child:hover {
-                    background-color: #e0e0e0;
-                    color: black;
-                }
-                </style>
-            """, unsafe_allow_html=True)
-
-
-
-
             if st.button(text, key=idx, help="クリックしてチェック", use_container_width=True):
                 st.session_state.checked[idx - 1] = True
                 st.rerun()
