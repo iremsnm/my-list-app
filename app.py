@@ -30,7 +30,7 @@ if uploaded_file is not None:
     sub_df = df.loc[start:end]
 
     unchecked_count = df["checked"].value_counts().get(False, 0)
-    st.markdown(f"**残り: {unchecked_count} 件**")
+    st.markdown(f"**残り: {unchecked_count} 工程**")
 
     for idx, row in sub_df.iterrows():
         text = f"{idx}. {row['item']}"
@@ -43,7 +43,7 @@ if uploaded_file is not None:
         else:
             st.markdown(text)
 
-    if st.button("リセット", help="チェックをすべて未チェックに戻します"):
+    if st.button("リセット", help="チェック状況をすべてリセット"):
         st.session_state.checked = [False] * len(df)
         st.rerun()
 
@@ -54,7 +54,7 @@ if uploaded_file is not None:
     buffer = BytesIO(json_bytes)
 
     st.download_button(
-        label="中途データを保存",
+        label="中途データを生成・保存",
         data=buffer,
         file_name=filename,
         mime="application/json"
