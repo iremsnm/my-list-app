@@ -54,6 +54,7 @@ if uploaded_file is not None:
     filename = f"check_state_{now}.json"
     json_bytes = json.dumps(st.session_state.checked, indent=2, ensure_ascii=False).encode("utf-8")
     buffer = BytesIO(json_bytes)
+    buffer.seek(0)  # これを追加！
 
     st.download_button(
         label="中途データを生成・保存",
