@@ -59,7 +59,7 @@ if uploaded_file is not None:
 
     # base64 エンコードしてダウンロードリンク生成
     b64 = base64.b64encode(json_data.encode()).decode()
-    href = f'<a href="data:application/json;base64,{b64}" download="{filename}">⬇️中途データを保存</a>'
+    href = f'<a href="data:application/json;base64,{b64}" download="{filename}">中途データを保存</a>'
     st.markdown(href, unsafe_allow_html=True)
 
     # --- 読み込み（下部） ---
