@@ -35,9 +35,14 @@ if uploaded_file is not None:
     unchecked_count = df["checked"].value_counts().get(False, 0)
     st.markdown(f"**残り: {unchecked_count} 工程**")
 
+    for idx, row in sub_df.iterrows():
+        text = f"{idx}. {row['item']}"
+        if row["checked"]:
+            st.markdown(f"<span style='color: gray;'>{text}</span>", unsafe_allow_html=True)
+        elif idx == first_unchecked:
 
 
-    # カスタムスタイルを追加（赤く見えないように）
+                # カスタムスタイルを追加（赤く見えないように）
 st.markdown("""
     <style>
     div.stButton > button:first-child {
@@ -57,12 +62,6 @@ st.markdown("""
 
 
 
-
-    for idx, row in sub_df.iterrows():
-        text = f"{idx}. {row['item']}"
-        if row["checked"]:
-            st.markdown(f"<span style='color: gray;'>{text}</span>", unsafe_allow_html=True)
-        elif idx == first_unchecked:
             if st.button(text, key=idx, help="クリックしてチェック", use_container_width=True):
                 st.session_state.checked[idx - 1] = True
                 st.rerun()
