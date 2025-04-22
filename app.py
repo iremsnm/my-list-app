@@ -3,6 +3,7 @@ import streamlit as st
 import json
 from io import StringIO, BytesIO
 from datetime import datetime
+import pytz  # 追加
 
 st.title("check list")
 
@@ -47,8 +48,9 @@ if uploaded_file is not None:
         st.session_state.checked = [False] * len(df)
         st.rerun()
 
-    # --- 保存処理（ファイル名に日付＋時間を含む） ---
-    now = datetime.now().strftime("%Y%m%d_%H-%M-%S")
+    # --- 保存処理（日本時間付きファイル名） ---
+    japan_tz = pytz.timezone('Asia/Tokyo')  # 日本時間（JST）を設定
+    now = datetime.now(japan_tz).strftime("%Y%m%d_%H-%M-%S")
     filename = f"check_state_{now}.json"
     json_bytes = json.dumps(st.session_state.checked, indent=2, ensure_ascii=False).encode("utf-8")
     buffer = BytesIO(json_bytes)
