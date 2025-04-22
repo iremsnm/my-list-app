@@ -4,11 +4,9 @@ import json
 from io import StringIO
 from datetime import datetime
 import pytz
+import base64
 
 st.title("check list")
-
-# 📌 通常のブラウザで開くように案内
-st.info("⚠️ JSON保存がうまくいかない場合は、Safari や Chrome など通常のブラウザで開いてください。")
 
 uploaded_file = st.file_uploader("CSVファイルをアップロードしてください", type=["csv"])
 
@@ -51,16 +49,23 @@ if uploaded_file is not None:
         st.session_state.checked = [False] * len(df)
         st.rerun()
 
-    # --- JSON状態のコピー用出力 ---
-    japan_tz = pytz.timezone('Asia/Tokyo')
-    now = datetime.now(japan_tz).strftime("%Y/%m/%d %H:%M:%S")
-    st.markdown("### ✅ 現在のチェック状態を保存（手動コピー）")
-    st.caption(f"保存日時: {now}")
-    json_str = json.dumps(st.session_state.checked, indent=2, ensure_ascii=False)
-    st.text_area("以下をコピーして保存してください（メモ帳などに貼り付けて保存できます）", value=json_str, height=200)
-
-    # --- 読み込み（下部に配置） ---
+    # --- 保存リンク生成 ---
     st.markdown("---")
+    st.subheader("チェック状態の保存")
+
+    japan_tz = pytz.timezone('Asia/Tokyo')
+    now = datetime.now(japan_tz).strftime("%Y%m%d_%H-%M-%S")
+    filename = f"check_state_{now}.json"
+    json_data = json.dumps(st.session_state.checked, indent=2, ensure_ascii=False)
+
+    # base64 エンコードしてダウンロードリンク生成
+    b64 = base64.b64encode(json_data.encode()).decode()
+    href = f'<a href="data:application/json;base64,{b64}" download="{filename}">✅ JSONファイルとして保存する</a>'
+    st.markdown(href, unsafe_allow_html=True)
+
+    # --- 読み込み（下部） ---
+    st.markdown("---")
+    st.subheader("保存状態の読み込み")
     json_file = st.file_uploader("中途データ読込み", type=["json"], key="json")
 
     if json_file is not None:
