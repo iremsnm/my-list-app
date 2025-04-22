@@ -49,7 +49,13 @@ if uploaded_file is not None:
 
     # --- 保存処理（確実なファイル名付き） ---
     now = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"check_state_{now}.json"
+    
+from datetime import datetime
+
+# タイムスタンプの生成（: を - に置き換える）
+now = datetime.now().strftime("%Y%m%d_%H-%M-%S")
+filename = f"check_state_{now}.json"
+
     json_bytes = json.dumps(st.session_state.checked, indent=2, ensure_ascii=False).encode("utf-8")
     buffer = BytesIO(json_bytes)
 
