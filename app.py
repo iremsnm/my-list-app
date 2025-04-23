@@ -10,7 +10,7 @@ st.set_page_config(layout="wide")
 st.title("check list")
 
 uploaded_file = st.file_uploader("CSVファイルをアップロードしてください", type=["csv"])
-sub_material_file = st.file_uploader("副原料リストをアップロードしてください", type=["csv"], key="sub_material")
+sub_material_file = st.file_uラー("副原料リストをアップロードしてください", type=["csv"], key="sub_material")
 
 if uploaded_file is not None:
     df = pd.read_csv(uploaded_file, header=None, names=["item"])
@@ -29,7 +29,7 @@ if uploaded_file is not None:
 
     st.markdown("---")
 
-    show_extra_info = st.toggle("副原料の追加情報を表示", value=True)
+    show_extra_info = st.checkbox("副原料の追加情報を表示", value=True)
 
     def get_extra_info_row(item):
         if not show_extra_info or sub_df.empty or item not in sub_df.index:
