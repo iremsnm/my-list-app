@@ -114,7 +114,6 @@ if uploaded_file is not None:
     href = f'<a href="data:application/json;base64,{b64}" download="{filename}">中途データ保存</a>'
     st.markdown(href, unsafe_allow_html=True)
 
-
     st.markdown("---")
     st.subheader("保存状態の読み込み")
     json_file = st.file_uploader("中途データ読込", type=["json"], key="json")
@@ -126,7 +125,6 @@ if uploaded_file is not None:
             st.rerun()
         else:
             st.warning("行数が一致しません")
-
 
     st.markdown("---")
     st.subheader("count")
@@ -142,7 +140,6 @@ if uploaded_file is not None:
     hide_index=True
 )
 
-    
     st.markdown("---")
     if st.button("リセット", help="チェックをリセット"):
         st.session_state.checked = [False] * len(df)
