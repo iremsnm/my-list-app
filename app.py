@@ -145,12 +145,3 @@ if uploaded_file is not None:
 
     if "json_loaded_once" in st.session_state:
         del st.session_state["json_loaded_once"]
-
-    # --- タブの表示 ---
-    st.sidebar.markdown("### タブメニュー")
-    tab_selection = st.sidebar.radio("選択してください", ["リスト", "詳細情報"])
-
-    if tab_selection == "リスト":
-        st.write("リストタブ")
-    elif tab_selection == "詳細情報":
-        st.write("詳細情報タブ")
