@@ -5,7 +5,6 @@ from io import StringIO, BytesIO
 from datetime import datetime
 import pytz
 
-st.set_page_config(layout="wide")  # ワイドレイアウトでスマホ対応
 st.title("check list")
 
 uploaded_file = st.file_uploader("CSVファイルをアップロードしてください", type=["csv"])
@@ -26,21 +25,27 @@ if uploaded_file is not None:
 
     df["checked"] = st.session_state.checked
 
+    st.markdown("---")
+
+    # ON/OFFトグル
     show_extra_info = st.toggle("副原料の追加情報を表示", value=True)
 
     def get_extra_info(item):
         if not show_extra_info or sub_df.empty:
-            return {"E": "", "属性": "", "SP": "", "効果": ""}
+            return ""
         if item in sub_df.index:
             match = sub_df.loc[item]
-            return match.to_dict()
-        return {"E": "", "属性": "", "SP": "", "効果": ""}
+            return f"（E: {match['E']}, 属性: {match['属性']}, SP: {match['SP']}, 効果: {match['効果']}）"
+        return ""
 
+    # --- ジャンプ機能 ---
     jump_to = st.number_input("行番号を指定してジャンプ", min_value=1, max_value=len(df), step=1)
     if st.button("ジャンプ", key="jump_button"):
         for i in range(jump_to - 1):
             st.session_state.checked[i] = True
         st.rerun()
+
+    st.markdown("---")
 
     df["checked"] = st.session_state.checked
     checked_indices = [i for i, val in enumerate(df["checked"], 1) if val]
@@ -58,49 +63,53 @@ if uploaded_file is not None:
     unchecked_count = df["checked"].value_counts().get(False, 0)
     st.markdown(f"**残り: {unchecked_count} 工程**")
 
-    def display_rows(df_segment):
-        for idx, row in df_segment.iterrows():
-            extra = get_extra_info(row["item"])
-            with st.container():
-                cols = st.columns([2, 1.2, 1.2, 1.2, 2.5])
-                label = f"{idx}. {row['item']}"
-                if row["checked"]:
-                    cols[0].markdown(f"<span style='color: gray'>{label}</span>", unsafe_allow_html=True)
-                    cols[1].markdown(f"<span style='color: gray'>{extra['E']}</span>", unsafe_allow_html=True)
-                    cols[2].markdown(f"<span style='color: gray'>{extra['属性']}</span>", unsafe_allow_html=True)
-                    cols[3].markdown(f"<span style='color: gray'>{extra['SP']}</span>", unsafe_allow_html=True)
-                    cols[4].markdown(f"<span style='color: gray'>{extra['効果']}</span>", unsafe_allow_html=True)
-                elif idx == first_unchecked:
-                    if cols[0].button(label, key=idx):
-                        st.session_state.checked[idx - 1] = True
-                        st.rerun()
-                    cols[1].markdown(extra['E'])
-                    cols[2].markdown(extra['属性'])
-                    cols[3].markdown(extra['SP'])
-                    cols[4].markdown(extra['効果'])
-                else:
-                    cols[0].markdown(label)
-                    cols[1].markdown(extra['E'])
-                    cols[2].markdown(extra['属性'])
-                    cols[3].markdown(extra['SP'])
-                    cols[4].markdown(extra['効果'])
-
+    # --- 上側の追加表示 ---
     if start > 1:
-        with st.expander("欄外5件 上"):
+        with st.expander("欄外5件"):
             extra_top_df = df.loc[max(1, start - 5):start - 1]
-            display_rows(extra_top_df)
+            for idx, row in extra_top_df.iterrows():
+                full_text = f"{idx}. {row['item']} {get_extra_info(row['item'])}"
+                if row["checked"]:
+                    st.markdown(f"<span style='color: gray;'>{full_text}</span>", unsafe_allow_html=True)
+                else:
+                    st.markdown(full_text, unsafe_allow_html=True)
 
-    st.markdown("### 表示中のリスト")
-    header_cols = st.columns([2, 1.2, 1.2, 1.2, 2.5])
-    headers = ["項目", "E", "属性", "SP", "効果"]
-    for col, header in zip(header_cols, headers):
-        col.markdown(f"**{header}**")
-    display_rows(sub_df_display)
+    # --- メイン表示 ---
+    col1, col2 = st.columns([3, 1])  # 2列に分けて表示
+    with col1:
+        for idx, row in sub_df_display.iterrows():
+            base_text = f"{idx}. {row['item']}"
+            extra_info_html = get_extra_info(row["item"])
+            full_html = base_text + " " + extra_info_html
 
+            if row["checked"]:
+                st.markdown(f"<span style='color: gray; white-space: pre-wrap;'>{full_html}</span>", unsafe_allow_html=True)
+            elif idx == first_unchecked:
+                if st.button(base_text, key=idx):
+                    st.session_state.checked[idx - 1] = True
+                    st.rerun()
+
+    # 横並びで表示された項目情報（チェック済みならグレーアウト）
+    with col2:
+        for idx, row in sub_df_display.iterrows():
+            base_text = f"{idx}. {row['item']}"
+            extra_info_html = get_extra_info(row["item"])
+
+            if row["checked"]:
+                st.markdown(f"<span style='color: gray;'>{extra_info_html}</span>", unsafe_allow_html=True)
+            else:
+                st.markdown(extra_info_html)
+
+    # --- 下側の追加表示 ---
     if end < len(df):
-        with st.expander("欄外5件 下"):
+        with st.expander("欄外5件"):
             extra_bottom_df = df.loc[end + 1:min(end + 5, len(df))]
-            display_rows(extra_bottom_df)
+            for idx, row in extra_bottom_df.iterrows():
+                full_text = f"{idx}. {row['item']} {get_extra_info(row['item'])}"
+                if row["checked"]:
+                    st.markdown(f"<span style='color: gray;'>{full_text}</span>", unsafe_allow_html=True)
+                else:
+                    st.markdown(full_text, unsafe_allow_html=True)
 
     if st.button("リセット", help="チェック状況をリセット"):
         st.session_state.checked = [False] * len(df)
@@ -108,6 +117,7 @@ if uploaded_file is not None:
 
     st.markdown("---")
 
+    # --- 保存処理 ---
     japan_tz = pytz.timezone('Asia/Tokyo')
     now = datetime.now(japan_tz).strftime("%Y%m%d_%H-%M-%S")
     filename = f"check_state_{now}.json"
@@ -121,6 +131,7 @@ if uploaded_file is not None:
         mime="application/json"
     )
 
+    # --- 読み込み ---
     json_file = st.file_uploader("中途データ読込み", type=["json"], key="json")
     if json_file is not None:
         json_str = StringIO(json_file.getvalue().decode("utf-8")).read()
@@ -133,6 +144,7 @@ if uploaded_file is not None:
         else:
             st.warning("JSONとCSVの行数が一致しません。")
 
+    # --- 集計表の表示 ---
     st.markdown("---")
     st.markdown("### count")
 
