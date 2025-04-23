@@ -25,7 +25,7 @@ if uploaded_file is not None:
         for i in range(jump_to - 1):
             st.session_state.checked[i] = True
         st.rerun()
-st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True) # 余白を設定
     
 
     # チェック状態を反映
@@ -60,7 +60,7 @@ st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True)
     if st.button("リセット", help="チェック状況をリセット"):
         st.session_state.checked = [False] * len(df)
         st.rerun()
-st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True) # 余白を設定
 
     # --- 保存処理 ---
     japan_tz = pytz.timezone('Asia/Tokyo')
