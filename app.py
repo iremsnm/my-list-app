@@ -95,19 +95,19 @@ if uploaded_file is not None:
             
     # --- 集計表の表示 ---
     st.markdown("---")
-    st.markdown("### 項目別のカウント（集計表）")
+    st.markdown("### カウント")
     
     # 全体の件数
-    total_counts = df["item"].value_counts().rename("合計件数")
+    total_counts = df["item"].value_counts().rename("必要数")
     
     # チェック済みだけに絞って件数
-    checked_counts = df[df["checked"]]["item"].value_counts().rename("チェック済み件数")
+    checked_counts = df[df["checked"]]["item"].value_counts().rename("チェック済み")
     
     # 合計とチェック済みをマージ
     summary_df = pd.concat([total_counts, checked_counts], axis=1).fillna(0).astype(int)
     
     # 残数列を追加
-    summary_df["残数"] = summary_df["合計件数"] - summary_df["チェック済み件数"]
+    summary_df["残"] = summary_df["合計件数"] - summary_df["チェック済み件数"]
     
     # インデックスを項目として列に戻す
     summary_df = summary_df.reset_index().rename(columns={"index": "項目"})
