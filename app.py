@@ -6,10 +6,10 @@ from datetime import datetime
 import pytz
 
 st.set_page_config(layout="wide")
-st.title("📋 チェックリスト（副原料付き）")
+st.title("check list")
 
-uploaded_file = st.file_uploader("CSVファイルをアップロード", type=["csv"])
-sub_material_file = st.file_uploader("副原料リストをアップロード", type=["csv"], key="sub_material")
+uploaded_file = st.file_uploader("リスト作成用ファイルをアップロード", type=["csv"])
+sub_material_file = st.file_uploader("紐付け用ファイルをアップロード", type=["csv"], key="sub_material")
 
 if uploaded_file is not None:
     df = pd.read_csv(uploaded_file, header=None, names=["item"])
@@ -22,7 +22,7 @@ if uploaded_file is not None:
 
     df["checked"] = st.session_state.checked
 
-    show_extra_info = st.toggle("副原料の追加情報を表示", value=True)
+    show_extra_info = st.toggle("詳細", value=True)
 
     def get_extra_info_html(item):
         if not show_extra_info or sub_df.empty or item not in sub_df.index:
@@ -49,7 +49,7 @@ if uploaded_file is not None:
     end = min((first_unchecked or latest_checked) + 5, len(df))
     display_df = df.loc[start:end]
 
-    st.markdown(f"🟡 残り **{df['checked'].value_counts().get(False, 0)}** 件")
+    st.markdown(f"残 **{df['checked'].value_counts().get(False, 0)}** step")
 
     # 表示用関数
     def render_item_card(idx, row):
@@ -66,7 +66,7 @@ if uploaded_file is not None:
 
     # 上部に「前の5件」を表示
     if start > 1:
-        with st.expander("⬆️ 前の5件"):
+        with st.expander(""):
             for idx, row in df.loc[max(1, start - 5):start - 1].iterrows():
                 st.markdown(render_item_card(idx, row), unsafe_allow_html=True)
 
@@ -81,11 +81,11 @@ if uploaded_file is not None:
 
     # 下部欄外表示
     if end < len(df):
-        with st.expander("⬇️ 次の5件"):
+        with st.expander(""):
             for idx, row in df.loc[end + 1:min(end + 5, len(df))].iterrows():
                 st.markdown(render_item_card(idx, row), unsafe_allow_html=True)
 
-    if st.button("🔄 リセット", help="チェックをリセットします"):
+    if st.button("リセット", help="チェックをリセット"):
         st.session_state.checked = [False] * len(df)
         st.rerun()
 
@@ -94,9 +94,9 @@ if uploaded_file is not None:
     # 保存・読込機能
     now = datetime.now(pytz.timezone("Asia/Tokyo")).strftime("%Y%m%d_%H-%M-%S")
     json_bytes = json.dumps(st.session_state.checked, indent=2, ensure_ascii=False).encode("utf-8")
-    st.download_button("💾 一時保存", data=BytesIO(json_bytes), file_name=f"check_state_{now}.json")
+    st.download_button("一時保存", data=BytesIO(json_bytes), file_name=f"check_state_{now}.json")
 
-    json_file = st.file_uploader("🔁 JSON読込", type=["json"], key="json")
+    json_file = st.file_uploader("中途データ読込み", type=["json"], key="json")
     if json_file:
         json_str = StringIO(json_file.getvalue().decode("utf-8")).read()
         loaded = json.loads(json_str)
@@ -108,7 +108,7 @@ if uploaded_file is not None:
 
     # 集計表示
     st.markdown("---")
-    st.markdown("📊 **集計表**")
+    st.markdown("count")
     total = df["item"].value_counts().rename("必要数")
     checked = df[df["checked"]]["item"].value_counts().rename("チェック済み")
     summary = pd.concat([total, checked], axis=1).fillna(0).astype(int)
