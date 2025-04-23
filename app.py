@@ -30,13 +30,16 @@ if uploaded_file is not None:
 
     show_extra_info = st.toggle("副原料の追加情報を表示", value=True)
 
-    def get_extra_info_row(item):
-        if not show_extra_info or sub_df.empty:
-            return ["", "", "", ""]
-        if item in sub_df.index:
-            match = sub_df.loc[item]
-            return [match["E"], match["属性"], match["SP"], match["効果"]]
-        return ["", "", "", ""]
+    def get_extra_info_dict(item):
+        if not show_extra_info or sub_df.empty or item not in sub_df.index:
+            return {"E": "", "属性": "", "SP": "", "効果": ""}
+        match = sub_df.loc[item]
+        return {
+            "E": match["E"],
+            "属性": match["属性"],
+            "SP": match["SP"],
+            "効果": match["効果"]
+        }
 
     jump_to = st.number_input("行番号を指定してジャンプ", min_value=1, max_value=len(df), step=1)
     if st.button("ジャンプ", key="jump_button"):
@@ -62,35 +65,42 @@ if uploaded_file is not None:
     unchecked_count = df["checked"].value_counts().get(False, 0)
     st.markdown(f"**残り: {unchecked_count} 工程**")
 
-    def display_rows(display_df):
+    def render_list_section(display_df):
         for idx, row in display_df.iterrows():
-            e, attr, sp, effect = get_extra_info_row(row["item"])
-            with st.container():
-                cols = st.columns([3, 1, 1, 2, 3])
-                base_text = f"{idx}. {row['item']}"
-                color = "gray" if row["checked"] else "black"
-                if idx == first_unchecked and not row["checked"]:
-                    if cols[0].button(base_text, key=f"btn_{idx}"):
-                        st.session_state.checked[idx - 1] = True
-                        st.rerun()
+            cols = st.columns([3, 1.5, 1.5, 2, 4])
+            checked = row["checked"]
+            extra_info = get_extra_info_dict(row["item"])
+
+            label = f"{idx}. {row['item']}"
+            if checked:
+                cols[0].markdown(f"<span style='color: gray;'>{label}</span>", unsafe_allow_html=True)
+            elif idx == first_unchecked:
+                if cols[0].button(label, key=idx):
+                    st.session_state.checked[idx - 1] = True
+                    st.rerun()
+            else:
+                cols[0].markdown(label)
+
+            for i, key in enumerate(["E", "属性", "SP", "効果"]):
+                text = extra_info[key]
+                if checked:
+                    cols[i + 1].markdown(f"<span style='color: lightgray;'>{text}</span>", unsafe_allow_html=True)
                 else:
-                    cols[0].markdown(f"<span style='color: {color};'>{base_text}</span>", unsafe_allow_html=True)
-                cols[1].markdown(f"<span style='color: lightgray;'>{e}</span>", unsafe_allow_html=True)
-                cols[2].markdown(f"<span style='color: lightgray;'>{attr}</span>", unsafe_allow_html=True)
-                cols[3].markdown(f"<span style='color: lightgray;'>{sp}</span>", unsafe_allow_html=True)
-                cols[4].markdown(f"<span style='color: lightgray;'>{effect}</span>", unsafe_allow_html=True)
+                    cols[i + 1].markdown(text)
 
     if start > 1:
         with st.expander("欄外5件"):
-            extra_top_df = df.loc[max(1, start - 5):start - 1]
-            display_rows(extra_top_df)
+            st.markdown("**上部の欄外表示**")
+            render_list_section(df.loc[max(1, start - 5):start - 1])
 
-    display_rows(sub_df_display)
+    st.markdown("---")
+    render_list_section(sub_df_display)
+    st.markdown("---")
 
     if end < len(df):
         with st.expander("欄外5件"):
-            extra_bottom_df = df.loc[end + 1:min(end + 5, len(df))]
-            display_rows(extra_bottom_df)
+            st.markdown("**下部の欄外表示**")
+            render_list_section(df.loc[end + 1:min(end + 5, len(df))])
 
     if st.button("リセット", help="チェック状況をリセット"):
         st.session_state.checked = [False] * len(df)
