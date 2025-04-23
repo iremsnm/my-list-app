@@ -23,7 +23,6 @@ if uploaded_file is not None:
 
     df["checked"] = st.session_state.checked
 
-    # 表示範囲の決定
     checked_indices = [i for i, val in enumerate(df["checked"], 1) if val]
     latest_checked = checked_indices[-1] if checked_indices else 1
 
@@ -45,12 +44,11 @@ if uploaded_file is not None:
             st.rerun()
     st.markdown("---")
 
-    # トグルの位置を変更！
     show_extra_info = st.toggle("追加情報を表示", value=True)
 
     st.markdown(f"残り **{df['checked'].value_counts().get(False, 0)}** step")
 
-    # 表示用関数
+    # --- 表示用関数 ---
     def get_extra_info_html(item):
         if not show_extra_info or sub_df.empty or item not in sub_df.index:
             return ""
@@ -101,12 +99,24 @@ if uploaded_file is not None:
         with st.expander("次の5件"):
             for idx, row in df.loc[end + 1:min(end + 5, len(df))].iterrows():
                 st.markdown(render_item_card(idx, row), unsafe_allow_html=True)
+
     st.markdown("---")
 
-    now = datetime.now(pytz.timezone("Asia/Tokyo")).strftime("%Y%m%d_%H-%M-%S")
+    # --- 保存処理（旧スタイルに戻し）---
+    japan_tz = pytz.timezone('Asia/Tokyo')
+    now = datetime.now(japan_tz).strftime("%Y%m%d_%H-%M-%S")
+    filename = f"check_state_{now}.json"
     json_bytes = json.dumps(st.session_state.checked, indent=2, ensure_ascii=False).encode("utf-8")
-    st.download_button("一時保存", data=BytesIO(json_bytes), file_name=f"check_state_{now}.json")
+    buffer = BytesIO(json_bytes)
 
+    st.download_button(
+        label="一時保存",
+        data=buffer,
+        file_name=filename,
+        mime="application/json"
+    )
+
+    # --- JSON 読み込み ---
     json_file = st.file_uploader("中途データ読込", type=["json"], key="json")
     if json_file:
         json_str = StringIO(json_file.getvalue().decode("utf-8")).read()
