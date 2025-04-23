@@ -25,31 +25,28 @@ if uploaded_file is not None:
         st.session_state.checked = [False] * len(df)
 
     df["checked"] = st.session_state.checked
-
     st.markdown("---")
 
     show_extra_info = st.toggle("副原料の追加情報を表示", value=True)
 
-    def get_extra_info_dict(item):
+    def get_extra_info(item):
         if not show_extra_info or sub_df.empty:
-            return {"E": "", "属性": "", "SP": "", "効果": ""}
+            return ""
         if item in sub_df.index:
             match = sub_df.loc[item]
             return {
-                "E": str(match["E"]),
-                "属性": str(match["属性"]),
-                "SP": str(match["SP"]),
-                "効果": str(match["効果"]),
+                "E": match["E"],
+                "属性": match["属性"],
+                "SP": match["SP"],
+                "効果": match["効果"]
             }
-        return {"E": "", "属性": "", "SP": "", "効果": ""}
+        return {}
 
     jump_to = st.number_input("行番号を指定してジャンプ", min_value=1, max_value=len(df), step=1)
     if st.button("ジャンプ", key="jump_button"):
         for i in range(jump_to - 1):
             st.session_state.checked[i] = True
         st.rerun()
-
-    st.markdown("---")
 
     df["checked"] = st.session_state.checked
     checked_indices = [i for i, val in enumerate(df["checked"], 1) if val]
@@ -68,40 +65,39 @@ if uploaded_file is not None:
     st.markdown(f"**残り: {unchecked_count} 工程**")
 
     def render_card(idx, row):
-        extra_info = get_extra_info_dict(row["item"])
-        is_checked = row["checked"]
-        card_color = "#f0f0f0" if is_checked else "white"
-
-        col1, col2 = st.columns([2, 5])
-        with col1:
-            if st.button(f"{idx}. {row['item']}", key=f"cardbtn_{idx}"):
-                st.session_state.checked[idx - 1] = True
-                st.rerun()
-        with col2:
-            if show_extra_info:
-                st.markdown(
-                    f"""
-                    <div style='background-color:{card_color}; padding: 0.5em; border-radius: 0.5em; font-size: small; color:{'gray' if is_checked else 'black'}'>
-                        <b>E:</b> {extra_info['E']}<br>
-                        <b>属性:</b> {extra_info['属性']}<br>
-                        <b>SP:</b> {extra_info['SP']}<br>
-                        <b>効果:</b> {extra_info['効果']}
+        extra_info = get_extra_info(row["item"])
+        with st.container():
+            col1, col2 = st.columns([2, 3])
+            with col1:
+                if row["checked"]:
+                    st.markdown(f"<div style='padding: 10px; background-color: #f0f0f0; color: gray; border-radius: 10px;'>✅ {idx}. {row['item']}</div>", unsafe_allow_html=True)
+                else:
+                    if st.button(f"✅ {idx}. {row['item']}", key=f"card_{idx}"):
+                        st.session_state.checked[idx - 1] = True
+                        st.rerun()
+            with col2:
+                if show_extra_info and extra_info:
+                    color = "gray" if row["checked"] else "black"
+                    st.markdown(f"""
+                    <div style='border: 1px solid #ccc; border-radius: 10px; padding: 10px; color: {color};'>
+                        <strong>E:</strong> {extra_info['E']}<br>
+                        <strong>属性:</strong> {extra_info['属性']}<br>
+                        <strong>SP:</strong> {extra_info['SP']}<br>
+                        <strong>効果:</strong> {extra_info['効果']}<br>
                     </div>
-                    """,
-                    unsafe_allow_html=True
-                )
-
-    for idx, row in sub_df_display.iterrows():
-        render_card(idx, row)
+                    """, unsafe_allow_html=True)
 
     if start > 1:
-        with st.expander("欄外5件（前）"):
+        with st.expander("欄外5件"):
             extra_top_df = df.loc[max(1, start - 5):start - 1]
             for idx, row in extra_top_df.iterrows():
                 render_card(idx, row)
 
+    for idx, row in sub_df_display.iterrows():
+        render_card(idx, row)
+
     if end < len(df):
-        with st.expander("欄外5件（後）"):
+        with st.expander("欄外5件"):
             extra_bottom_df = df.loc[end + 1:min(end + 5, len(df))]
             for idx, row in extra_bottom_df.iterrows():
                 render_card(idx, row)
