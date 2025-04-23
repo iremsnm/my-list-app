@@ -92,3 +92,13 @@ if uploaded_file is not None:
             st.rerun()
         else:
             st.warning("JSONとCSVの行数が一致しません。")
+            
+    # --- 集計表の表示 ---
+    st.markdown("---")
+    st.markdown("### 項目別のカウント（集計表）")
+    
+    count_table = df["item"].value_counts().reset_index()
+    count_table.columns = ["項目", "件数"]
+    
+    st.dataframe(count_table, use_container_width=True)
+
