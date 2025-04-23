@@ -18,21 +18,16 @@ if uploaded_file is not None:
 
     df["checked"] = st.session_state.checked
 
-        # 区切り線を設定
     st.markdown("---")
 
-    
     # --- ジャンプ機能 ---
     jump_to = st.number_input("行番号を指定してジャンプ", min_value=1, max_value=len(df), step=1)
     if st.button("ジャンプ", key="jump_button"):
-        # 指定行より前を全てチェック済みに
         for i in range(jump_to - 1):
             st.session_state.checked[i] = True
         st.rerun()
-        
-    # 区切り線を設定
+
     st.markdown("---")
-    
 
     # チェック状態を反映
     df["checked"] = st.session_state.checked
@@ -66,11 +61,9 @@ if uploaded_file is not None:
     if st.button("リセット", help="チェック状況をリセット"):
         st.session_state.checked = [False] * len(df)
         st.rerun()
-        
-    # 区切り線を設定
+
     st.markdown("---")
 
-    
     # --- 保存処理 ---
     japan_tz = pytz.timezone('Asia/Tokyo')
     now = datetime.now(japan_tz).strftime("%Y%m%d_%H-%M-%S")
@@ -93,31 +86,21 @@ if uploaded_file is not None:
         loaded_state = json.loads(json_str)
         if len(loaded_state) == len(df):
             st.session_state.checked = loaded_state
+            st.session_state.jumped_from_json = True  # フラグを設定
             st.rerun()
         else:
             st.warning("JSONとCSVの行数が一致しません。")
 
-    
     # --- 集計表の表示 ---
-    st.markdown("---")
-    st.markdown("### count")
-    
-    # 全体の件数
-    total_counts = df["item"].value_counts().rename("必要数")
-    
-    # チェック済みだけに絞って件数
-    checked_counts = df[df["checked"]]["item"].value_counts().rename("チェック済み")
-    
-    # 合計とチェック済みをマージ
-    summary_df = pd.concat([total_counts, checked_counts], axis=1).fillna(0).astype(int)
-    
-    # 残数列を追加
-    summary_df["残"] = summary_df["必要数"] - summary_df["チェック済み"]
-    
-    # インデックスを項目として列に戻す
-    summary_df = summary_df.reset_index().rename(columns={"index": "項目"})
-    
-    # 表示
-    st.dataframe(summary_df, use_container_width=True)
+    if "jumped_from_json" not in st.session_state:
+        st.markdown("---")
+        st.markdown("### count")
 
-
+        total_counts = df["item"].value_counts().rename("必要数")
+        checked_counts = df[df["checked"]]["item"].value_counts().rename("チェック済み")
+        summary_df = pd.concat([total_counts, checked_counts], axis=1).fillna(0).astype(int)
+        summary_df["残"] = summary_df["必要数"] - summary_df["チェック済み"]
+        summary_df = summary_df.reset_index().rename(columns={"index": "項目"})
+        st.dataframe(summary_df, use_container_width=True)
+    else:
+        del st.session_state["jumped_from_json"]
