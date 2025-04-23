@@ -80,19 +80,19 @@ if uploaded_file is not None:
     for idx, row in sub_df_display.iterrows():
         base_text = f"{idx}. {row['item']}"
         extra_info_html = get_extra_info(row["item"])
-        full_html = f"<div style='padding: 10px; border: 1px solid #ddd; border-radius: 5px; display: flex; flex-direction: column; cursor: pointer;' onclick='check_item({idx})'>"\
+        full_html = f"<div style='padding: 10px; border: 1px solid #ddd; border-radius: 5px; display: flex; flex-direction: column; cursor: pointer;'>"\
                     f"<strong>{base_text}</strong> {extra_info_html}"\
                     "</div>"
 
+        # チェック状態が True の場合、グレーアウト
         if row["checked"]:
             st.markdown(f"<div style='color: gray;'>{full_html}</div>", unsafe_allow_html=True)
         else:
+            # カードクリックでチェック状態を変更
+            if st.markdown(f"<div style='padding: 10px; border: 1px solid #ddd; border-radius: 5px; display: flex; flex-direction: column; cursor: pointer;'>{base_text} {extra_info_html}</div>", unsafe_allow_html=True):
+                st.session_state.checked[idx - 1] = not row["checked"]
+                st.rerun()
             st.markdown(full_html, unsafe_allow_html=True)
-
-        # カードをクリックした時にチェックの状態を更新
-        if st.markdown(f"<script>document.querySelector('[onclick=\"check_item({idx})\"]').addEventListener('click', function() {{st.session_state.checked[{idx - 1}] = !st.session_state.checked[{idx - 1}]; st.rerun();}});</script>", unsafe_allow_html=True):
-            st.session_state.checked[idx - 1] = not st.session_state.checked[idx - 1]
-            st.rerun()
 
     # --- 下側の追加表示 ---
     if end < len(df):
