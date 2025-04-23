@@ -9,27 +9,18 @@ st.title("check list")
 
 uploaded_file = st.file_uploader("CSVファイルをアップロードしてください", type=["csv"])
 
-# --- 副原料リスト読み込み ---
-sub_material_file = st.file_uploader("副原料リストをアップロード（初回のみ）", type=["csv"], key="subfile")
-
-if sub_material_file is not None and "sub_df" not in st.session_state:
-    sub_df = pd.read_csv(sub_material_file)
-    sub_df = sub_df[["副原料", "E", "属性", "SP", "効果"]].dropna(subset=["副原料"])
-    sub_df = sub_df.set_index("副原料")
-    st.session_state.sub_df = sub_df
-
-# 表示用に副原料情報を取得する関数
-def get_sub_info(item):
-    if "sub_df" not in st.session_state:
-        return ""
-    match = st.session_state.sub_df.loc[item] if item in st.session_state.sub_df.index else None
-    if match is not None:
-        return f"\n - E: {match['E']}\n - 属性: {match['属性']}\n - SP: {match['SP']}\n - 効果: {match['効果']}"
-    return ""
+# 副原料リストを事前読み込み（アップロード形式に変更）
+sub_material_file = st.file_uploader("副原料リストをアップロードしてください", type=["csv"], key="sub_material")
 
 if uploaded_file is not None:
     df = pd.read_csv(uploaded_file, header=None, names=["item"])
     df.index = df.index + 1
+
+    if sub_material_file is not None:
+        sub_df = pd.read_csv(sub_material_file)
+        sub_df = sub_df.set_index("副原料")
+    else:
+        sub_df = pd.DataFrame()
 
     if "checked" not in st.session_state or len(st.session_state.checked) != len(df):
         st.session_state.checked = [False] * len(df)
@@ -47,7 +38,9 @@ if uploaded_file is not None:
 
     st.markdown("---")
 
+    # チェック状態を反映
     df["checked"] = st.session_state.checked
+
     checked_indices = [i for i, val in enumerate(df["checked"], 1) if val]
     latest_checked = checked_indices[-1] if checked_indices else 1
 
@@ -63,6 +56,7 @@ if uploaded_file is not None:
     unchecked_count = df["checked"].value_counts().get(False, 0)
     st.markdown(f"**残り: {unchecked_count} 工程**")
 
+    # --- 上側の追加表示 ---
     if start > 1:
         with st.expander("欄外5件"):
             extra_top_df = df.loc[max(1, start - 5):start - 1]
@@ -73,9 +67,13 @@ if uploaded_file is not None:
                 else:
                     st.markdown(text)
 
+    # メイン表示
     for idx, row in sub_df_display.iterrows():
         base_text = f"{idx}. {row['item']}"
-        extra_info = get_sub_info(row['item'])
+        extra_info = ""
+        if not sub_df.empty and row['item'] in sub_df.index:
+            match = sub_df.loc[row['item']]
+            extra_info = f"（E: {match['E']}, 属性: {match['属性']}, SP: {match['SP']}, 効果: {match['効果']}）"
         full_text = base_text + extra_info
 
         if row["checked"]:
@@ -87,6 +85,7 @@ if uploaded_file is not None:
         else:
             st.markdown(full_text)
 
+    # --- 下側の追加表示 ---
     if end < len(df):
         with st.expander("欄外5件"):
             extra_bottom_df = df.loc[end + 1:min(end + 5, len(df))]
@@ -103,6 +102,7 @@ if uploaded_file is not None:
 
     st.markdown("---")
 
+    # --- 保存処理 ---
     japan_tz = pytz.timezone('Asia/Tokyo')
     now = datetime.now(japan_tz).strftime("%Y%m%d_%H-%M-%S")
     filename = f"check_state_{now}.json"
@@ -116,7 +116,9 @@ if uploaded_file is not None:
         mime="application/json"
     )
 
+    # --- 読み込み ---
     json_file = st.file_uploader("中途データ読込み", type=["json"], key="json")
+
     if json_file is not None:
         json_str = StringIO(json_file.getvalue().decode("utf-8")).read()
         loaded_state = json.loads(json_str)
@@ -128,6 +130,7 @@ if uploaded_file is not None:
         else:
             st.warning("JSONとCSVの行数が一致しません。")
 
+    # --- 集計表の表示 ---
     st.markdown("---")
     st.markdown("### count")
 
