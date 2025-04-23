@@ -35,10 +35,13 @@ if uploaded_file is not None:
             return ""
         if item in sub_df.index:
             match = sub_df.loc[item]
-            E = match['E'] if len(match['E']) < 20 else match['E'][:20] + "..."
-            属性 = match['属性'] if len(match['属性']) < 20 else match['属性'][:20] + "..."
-            SP = match['SP'] if len(match['SP']) < 20 else match['SP'][:20] + "..."
-            効果 = match['効果'] if len(match['効果']) < 20 else match['効果'][:20] + "..."
+            
+            # 各項目が存在するかチェックしてから省略
+            E = match.get('E', 'N/A') if len(str(match.get('E', 'N/A'))) < 20 else str(match.get('E', 'N/A'))[:20] + "..."
+            属性 = match.get('属性', 'N/A') if len(str(match.get('属性', 'N/A'))) < 20 else str(match.get('属性', 'N/A'))[:20] + "..."
+            SP = match.get('SP', 'N/A') if len(str(match.get('SP', 'N/A'))) < 20 else str(match.get('SP', 'N/A'))[:20] + "..."
+            効果 = match.get('効果', 'N/A') if len(str(match.get('効果', 'N/A'))) < 20 else str(match.get('効果', 'N/A'))[:20] + "..."
+            
             return f"<span style='color: lightgray;'>（E: {E}, 属性: {属性}, SP: {SP}, 効果: {効果}）</span>"
         return ""
 
@@ -79,10 +82,6 @@ if uploaded_file is not None:
                     st.markdown(full_text, unsafe_allow_html=True)
 
     # --- メイン表示 ---
-    # 見出し行を追加
-    if start == 1:
-        st.markdown("<br><h4>項目別情報</h4>", unsafe_allow_html=True)
-
     for idx, row in sub_df_display.iterrows():
         base_text = f"{idx}. {row['item']}"
         extra_info_html = get_extra_info(row["item"])
@@ -95,6 +94,12 @@ if uploaded_file is not None:
             if st.button(base_text, key=idx):
                 st.session_state.checked[idx - 1] = True
                 st.rerun()
+
+    # 情報をボタンの下に薄い文字で表示
+    if show_extra_info:
+        st.markdown(get_extra_info(row["item"]), unsafe_allow_html=True)
+    else:
+        st.markdown(full_html, unsafe_allow_html=True)
 
     # --- 下側の追加表示 ---
     if end < len(df):
