@@ -84,15 +84,13 @@ if uploaded_file is not None:
                     f"<strong>{base_text}</strong> {extra_info_html}"\
                     "</div>"
 
+        # チェックボタンをカードに変更
         if row["checked"]:
             st.markdown(f"<div style='color: gray;'>{full_html}</div>", unsafe_allow_html=True)
-        # チェックボタン表示
-        elif idx == first_unchecked:
-            if st.button(base_text, key=idx, help="クリックでチェック"):
+        else:
+            if st.button(f"チェック: {base_text}", key=idx, help="クリックでチェック"):
                 st.session_state.checked[idx - 1] = True
                 st.rerun()
-            st.markdown(full_html, unsafe_allow_html=True)
-        else:
             st.markdown(full_html, unsafe_allow_html=True)
 
     # --- 下側の追加表示 ---
