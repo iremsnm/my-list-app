@@ -26,15 +26,20 @@ if uploaded_file is not None:
     df["checked"] = st.session_state.checked
 
     st.markdown("---")
+
     show_extra_info = st.toggle("副原料の追加情報を表示", value=True)
 
-    def get_extra_info(item):
+    def display_extra_info_columns(item, idx):
         if not show_extra_info or sub_df.empty:
-            return ""
+            return
         if item in sub_df.index:
             match = sub_df.loc[item]
-            return f"E: {match['E']}, 属性: {match['属性']}, SP: {match['SP']}, 効果: {match['効果']}"
-        return ""
+            cols = st.columns([3, 1, 1, 1, 1])
+            cols[0].markdown(f"<span style='color: gray;'>{idx}. {item}</span>", unsafe_allow_html=True)
+            cols[1].markdown(f"<span style='color: gray;'>E: {match['E']}</span>", unsafe_allow_html=True)
+            cols[2].markdown(f"<span style='color: gray;'>属性: {match['属性']}</span>", unsafe_allow_html=True)
+            cols[3].markdown(f"<span style='color: gray;'>SP: {match['SP']}</span>", unsafe_allow_html=True)
+            cols[4].markdown(f"<span style='color: gray;'>効果: {match['効果']}</span>", unsafe_allow_html=True)
 
     jump_to = st.number_input("行番号を指定してジャンプ", min_value=1, max_value=len(df), step=1)
     if st.button("ジャンプ", key="jump_button"):
@@ -60,46 +65,30 @@ if uploaded_file is not None:
     unchecked_count = df["checked"].value_counts().get(False, 0)
     st.markdown(f"**残り: {unchecked_count} 工程**")
 
-    st.write("### 表形式チェックリスト")
+    if start > 1:
+        with st.expander("欄外5件"):
+            extra_top_df = df.loc[max(1, start - 5):start - 1]
+            for idx, row in extra_top_df.iterrows():
+                display_extra_info_columns(row["item"], idx)
 
     for idx, row in sub_df_display.iterrows():
-        cols = st.columns([1, 3, 4, 1])
-        cols[0].write(f"{idx}.")
-        cols[1].write(row["item"])
-
-        extra_info = get_extra_info(row["item"])
-        if extra_info:
-            cols[2].markdown(f"<span style='color: gray;'>{extra_info}</span>", unsafe_allow_html=True)
-        else:
-            cols[2].write("-")
-
+        item = row["item"]
         if row["checked"]:
-            cols[3].checkbox("✓", value=True, disabled=True, key=f"c_{idx}")
+            display_extra_info_columns(item, idx)
         elif idx == first_unchecked:
-            if cols[3].button("チェック", key=f"btn_{idx}"):
+            if st.button(f"{idx}. {item}", key=idx):
                 st.session_state.checked[idx - 1] = True
                 st.rerun()
+            display_extra_info_columns(item, idx)
         else:
-            cols[3].write("")
+            st.markdown(f"{idx}. {item}")
+            display_extra_info_columns(item, idx)
 
     if end < len(df):
         with st.expander("欄外5件"):
             extra_bottom_df = df.loc[end + 1:min(end + 5, len(df))]
             for idx, row in extra_bottom_df.iterrows():
-                cols = st.columns([1, 3, 4, 1])
-                cols[0].write(f"{idx}.")
-                cols[1].write(row["item"])
-
-                extra_info = get_extra_info(row["item"])
-                if extra_info:
-                    cols[2].markdown(f"<span style='color: gray;'>{extra_info}</span>", unsafe_allow_html=True)
-                else:
-                    cols[2].write("-")
-
-                if row["checked"]:
-                    cols[3].checkbox("✓", value=True, disabled=True, key=f"c_extra_{idx}")
-                else:
-                    cols[3].write("")
+                display_extra_info_columns(row["item"], idx)
 
     if st.button("リセット", help="チェック状況をリセット"):
         st.session_state.checked = [False] * len(df)
