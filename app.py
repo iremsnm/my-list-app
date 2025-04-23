@@ -27,8 +27,6 @@ if uploaded_file is not None:
     df["checked"] = st.session_state.checked
 
     st.markdown("---")
-
-    # ON/OFFトグル
     show_extra_info = st.toggle("副原料の追加情報を表示", value=True)
 
     def get_extra_info_dict(item):
@@ -42,7 +40,6 @@ if uploaded_file is not None:
             "効果": match["効果"]
         }
 
-    # --- ジャンプ機能 ---
     jump_to = st.number_input("行番号を指定してジャンプ", min_value=1, max_value=len(df), step=1)
     if st.button("ジャンプ", key="jump_button"):
         for i in range(jump_to - 1):
@@ -68,35 +65,30 @@ if uploaded_file is not None:
     st.markdown(f"**残り: {unchecked_count} 工程**")
 
     def render_row(idx, row):
-        cols = st.columns([3, 2, 2, 2, 3])
-        with cols[0]:
-            if row["checked"]:
-                st.markdown(f"<span style='color: gray;'>{idx}. {row['item']}</span>", unsafe_allow_html=True)
-            elif idx == first_unchecked:
-                if st.button(f"{idx}. {row['item']}", key=f"check_{idx}", help="クリックしてチェック", use_container_width=True):
-                    st.session_state.checked[idx - 1] = True
-                    st.rerun()
-            else:
-                st.markdown(f"{idx}. {row['item']}", unsafe_allow_html=True)
-
+        col1, col2 = st.columns([2, 5])
         info = get_extra_info_dict(row["item"])
-        for i, key in enumerate(["E", "属性", "SP", "効果"], 1):
-            with cols[i]:
-                color = "gray" if row["checked"] else "lightgray"
-                st.markdown(f"<div style='color: {color}; white-space: nowrap; overflow-x: auto;'>{info[key]}</div>", unsafe_allow_html=True)
 
-    # --- 上側の追加表示 ---
+        if row["checked"]:
+            col1.markdown(f"<span style='color: gray;'>{idx}. {row['item']}</span>", unsafe_allow_html=True)
+            col2.markdown(f"<span style='color: gray;'>E: {info['E']}｜属性: {info['属性']}｜SP: {info['SP']}｜効果: {info['効果']}</span>", unsafe_allow_html=True)
+        elif idx == first_unchecked:
+            if col1.button(f"{idx}. {row['item']}", key=idx):
+                st.session_state.checked[idx - 1] = True
+                st.rerun()
+            col2.markdown(f"<span style='color: lightgray;'>E: {info['E']}｜属性: {info['属性']}｜SP: {info['SP']}｜効果: {info['効果']}</span>", unsafe_allow_html=True)
+        else:
+            col1.markdown(f"{idx}. {row['item']}", unsafe_allow_html=True)
+            col2.markdown(f"<span style='color: lightgray;'>E: {info['E']}｜属性: {info['属性']}｜SP: {info['SP']}｜効果: {info['効果']}</span>", unsafe_allow_html=True)
+
     if start > 1:
         with st.expander("欄外5件"):
             extra_top_df = df.loc[max(1, start - 5):start - 1]
             for idx, row in extra_top_df.iterrows():
                 render_row(idx, row)
 
-    # --- メイン表示 ---
     for idx, row in sub_df_display.iterrows():
         render_row(idx, row)
 
-    # --- 下側の追加表示 ---
     if end < len(df):
         with st.expander("欄外5件"):
             extra_bottom_df = df.loc[end + 1:min(end + 5, len(df))]
@@ -109,7 +101,6 @@ if uploaded_file is not None:
 
     st.markdown("---")
 
-    # --- 保存処理 ---
     japan_tz = pytz.timezone('Asia/Tokyo')
     now = datetime.now(japan_tz).strftime("%Y%m%d_%H-%M-%S")
     filename = f"check_state_{now}.json"
@@ -123,7 +114,6 @@ if uploaded_file is not None:
         mime="application/json"
     )
 
-    # --- 読み込み ---
     json_file = st.file_uploader("中途データ読込み", type=["json"], key="json")
     if json_file is not None:
         json_str = StringIO(json_file.getvalue().decode("utf-8")).read()
@@ -136,7 +126,6 @@ if uploaded_file is not None:
         else:
             st.warning("JSONとCSVの行数が一致しません。")
 
-    # --- 集計表の表示 ---
     st.markdown("---")
     st.markdown("### count")
 
