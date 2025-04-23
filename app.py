@@ -27,7 +27,7 @@ if uploaded_file is not None:
         st.rerun()
         
     # 余白を設定
-    st.markdown("<div style='margin-bottom: 50px;'></div>", unsafe_allow_html=True) 
+    st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True) 
     
 
     # チェック状態を反映
@@ -64,7 +64,7 @@ if uploaded_file is not None:
         st.rerun()
         
     # 余白を設定
-    st.markdown("<div style='margin-bottom: 50px;'></div>", unsafe_allow_html=True) 
+    st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True) 
 
     
     # --- 保存処理 ---
