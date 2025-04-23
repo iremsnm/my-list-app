@@ -127,14 +127,18 @@ if uploaded_file is not None:
         else:
             st.warning("行数が一致しません")
 
-    st.markdown("---")
     st.markdown("count")
     total = df["item"].value_counts().rename("必要数")
     checked = df[df["checked"]]["item"].value_counts().rename("チェック済み")
     summary = pd.concat([total, checked], axis=1).fillna(0).astype(int)
     summary["残"] = summary["必要数"] - summary["チェック済み"]
-    st.dataframe(summary.reset_index().rename(columns={"index": "項目"}), use_container_width=True)
-    st.markdown("---")
+
+# インデックス列を非表示にする
+    st.dataframe(
+    summary.reset_index().rename(columns={"index": "項目"}),
+    use_container_width=True,
+    hide_index=True
+)
 
     if st.button("リセット", help="チェックをリセット"):
         st.session_state.checked = [False] * len(df)
