@@ -85,22 +85,25 @@ if uploaded_file is not None:
         json_str = StringIO(json_file.getvalue().decode("utf-8")).read()
         loaded_state = json.loads(json_str)
         if len(loaded_state) == len(df):
-            st.session_state.checked = loaded_state
-            st.session_state.jumped_from_json = True  # フラグを設定
-            st.rerun()
+            # フラグで無限ループ回避
+            if "json_loaded_once" not in st.session_state:
+                st.session_state.checked = loaded_state
+                st.session_state.json_loaded_once = True
+                st.rerun()
         else:
             st.warning("JSONとCSVの行数が一致しません。")
 
     # --- 集計表の表示 ---
-    if "jumped_from_json" not in st.session_state:
-        st.markdown("---")
-        st.markdown("### count")
+    st.markdown("---")
+    st.markdown("### count")
 
-        total_counts = df["item"].value_counts().rename("必要数")
-        checked_counts = df[df["checked"]]["item"].value_counts().rename("チェック済み")
-        summary_df = pd.concat([total_counts, checked_counts], axis=1).fillna(0).astype(int)
-        summary_df["残"] = summary_df["必要数"] - summary_df["チェック済み"]
-        summary_df = summary_df.reset_index().rename(columns={"index": "項目"})
-        st.dataframe(summary_df, use_container_width=True)
-    else:
-        del st.session_state["jumped_from_json"]
+    total_counts = df["item"].value_counts().rename("必要数")
+    checked_counts = df[df["checked"]]["item"].value_counts().rename("チェック済み")
+    summary_df = pd.concat([total_counts, checked_counts], axis=1).fillna(0).astype(int)
+    summary_df["残"] = summary_df["必要数"] - summary_df["チェック済み"]
+    summary_df = summary_df.reset_index().rename(columns={"index": "項目"})
+    st.dataframe(summary_df, use_container_width=True)
+
+    # 一度読み込んだらフラグを消す（次の読み込みに備える）
+    if "json_loaded_once" in st.session_state:
+        del st.session_state["json_loaded_once"]
