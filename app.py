@@ -18,30 +18,38 @@ if uploaded_file is not None:
 
     df["checked"] = st.session_state.checked
 
-    # --- 行ジャンプ機能 ---
-    jump_to = st.number_input("行番号を指定してジャンプ（1〜{}）".format(len(df)), min_value=1, max_value=len(df), value=1)
-    if "jump_index" not in st.session_state:
-        st.session_state.jump_index = jump_to
+    # --- ジャンプ機能 ---
+    jump_to = st.number_input("ジャンプ", min_value=1, max_value=len(df), step=1)
+    if st.button(f"{jump_to} ジャンプ", key="jump_button"):
+        # 指定行より前を全てチェック済みに
+        for i in range(jump_to - 1):
+            st.session_state.checked[i] = True
+        st.rerun()
 
-    if st.button("ジャンプする"):
-        st.session_state.jump_index = jump_to
+    # チェック状態を反映
+    df["checked"] = st.session_state.checked
 
-    # 表示範囲の調整
-    base_index = st.session_state.jump_index
-    start = max(base_index - 5, 1)
-    end = min(base_index + 5, len(df))
+    checked_indices = [i for i, val in enumerate(df["checked"], 1) if val]
+    latest_checked = checked_indices[-1] if checked_indices else 1
+
+    try:
+        first_unchecked = df.index[df["checked"] == False][0]
+    except IndexError:
+        first_unchecked = None
+
+    start = max(latest_checked - 5, 1)
+    end = min((first_unchecked or latest_checked) + 5, len(df))
     sub_df = df.loc[start:end]
 
     unchecked_count = df["checked"].value_counts().get(False, 0)
     st.markdown(f"**残り: {unchecked_count} 工程**")
 
-    # チェック表示
     for idx, row in sub_df.iterrows():
         text = f"{idx}. {row['item']}"
         if row["checked"]:
             st.markdown(f"<span style='color: gray;'>{text}</span>", unsafe_allow_html=True)
-        elif idx == df[~df["checked"]].index.min():
-            if st.button(text, key=f"check_{idx}"):
+        elif idx == first_unchecked:
+            if st.button(text, key=idx):
                 st.session_state.checked[idx - 1] = True
                 st.rerun()
         else:
@@ -51,7 +59,7 @@ if uploaded_file is not None:
         st.session_state.checked = [False] * len(df)
         st.rerun()
 
-    # --- 保存処理（日本時間付きファイル名） ---
+    # --- 保存処理 ---
     japan_tz = pytz.timezone('Asia/Tokyo')
     now = datetime.now(japan_tz).strftime("%Y%m%d_%H-%M-%S")
     filename = f"check_state_{now}.json"
