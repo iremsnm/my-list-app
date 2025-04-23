@@ -35,14 +35,10 @@ if uploaded_file is not None:
             return ""
         if item in sub_df.index:
             match = sub_df.loc[item]
-            
-            # 各項目が存在するかチェックしてから省略
-            E = match.get('E', 'N/A') if len(str(match.get('E', 'N/A'))) < 20 else str(match.get('E', 'N/A'))[:20] + "..."
-            属性 = match.get('属性', 'N/A') if len(str(match.get('属性', 'N/A'))) < 20 else str(match.get('属性', 'N/A'))[:20] + "..."
-            SP = match.get('SP', 'N/A') if len(str(match.get('SP', 'N/A'))) < 20 else str(match.get('SP', 'N/A'))[:20] + "..."
-            効果 = match.get('効果', 'N/A') if len(str(match.get('効果', 'N/A'))) < 20 else str(match.get('効果', 'N/A'))[:20] + "..."
-            
-            return f"<span style='color: lightgray;'>（E: {E}, 属性: {属性}, SP: {SP}, 効果: {効果}）</span>"
+            # 折り返しを防ぐため、省略表示を加える
+            truncated_effect = (match['効果'][:30] + '...') if len(match['効果']) > 30 else match['効果']
+            truncated_sp = (match['SP'][:20] + '...') if len(match['SP']) > 20 else match['SP']
+            return f"<span style='color: lightgray;'>（E: {match['E']}, 属性: {match['属性']}, SP: {truncated_sp}, 効果: {truncated_effect}）</span>"
         return ""
 
     # --- ジャンプ機能 ---
@@ -70,6 +66,11 @@ if uploaded_file is not None:
     unchecked_count = df["checked"].value_counts().get(False, 0)
     st.markdown(f"**残り: {unchecked_count} 工程**")
 
+    # --- 見出し行 ---
+    st.markdown("### 項目別情報")
+    st.markdown("| 項目 | E | 属性 | SP | 効果 |")
+    st.markdown("|------|---|------|----|------|")
+
     # --- 上側の追加表示 ---
     if start > 1:
         with st.expander("欄外5件"):
@@ -94,12 +95,10 @@ if uploaded_file is not None:
             if st.button(base_text, key=idx):
                 st.session_state.checked[idx - 1] = True
                 st.rerun()
-
+    
     # 情報をボタンの下に薄い文字で表示
     if show_extra_info:
         st.markdown(get_extra_info(row["item"]), unsafe_allow_html=True)
-    else:
-        st.markdown(full_html, unsafe_allow_html=True)
 
     # --- 下側の追加表示 ---
     if end < len(df):
