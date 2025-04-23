@@ -4,6 +4,7 @@ import json
 from io import StringIO, BytesIO
 from datetime import datetime
 import pytz
+import base64
 
 st.set_page_config(layout="wide")
 st.title("check list")
@@ -35,7 +36,6 @@ if uploaded_file is not None:
     end = min((first_unchecked or latest_checked) + 3, len(df))
     display_df = df.loc[start:end]
 
-    # --- ジャンプ機能 ---
     with st.container():
         jump_to = st.number_input("行番号を指定してジャンプ", min_value=1, max_value=len(df), step=1)
         if st.button("ジャンプ", key="jump_button"):
@@ -48,7 +48,6 @@ if uploaded_file is not None:
 
     st.markdown(f"残り **{df['checked'].value_counts().get(False, 0)}** step")
 
-    # --- 表示用関数 ---
     def get_extra_info_html(item):
         if not show_extra_info or sub_df.empty or item not in sub_df.index:
             return ""
@@ -70,7 +69,6 @@ if uploaded_file is not None:
             previous_checked = checked_indices[:-1][-3:]
             if idx in previous_checked:
                 bg = "#d3ffd3"
-
         if idx == latest_checked:
             bg = "#d3f7ff"
 
@@ -99,24 +97,28 @@ if uploaded_file is not None:
         with st.expander("次の5件"):
             for idx, row in df.loc[end + 1:min(end + 5, len(df))].iterrows():
                 st.markdown(render_item_card(idx, row), unsafe_allow_html=True)
-
     st.markdown("---")
 
-    # --- 保存処理（旧スタイルに戻し）---
-    japan_tz = pytz.timezone('Asia/Tokyo')
+    # --- 保存セクション ---
+    st.subheader("チェック状態の保存")
+
+    # 保存用データ生成
+    japan_tz = pytz.timezone("Asia/Tokyo")
     now = datetime.now(japan_tz).strftime("%Y%m%d_%H-%M-%S")
     filename = f"check_state_{now}.json"
-    json_bytes = json.dumps(st.session_state.checked, indent=2, ensure_ascii=False).encode("utf-8")
-    buffer = BytesIO(json_bytes)
+    json_data = json.dumps(st.session_state.checked, indent=2, ensure_ascii=False)
+    json_bytes = json_data.encode("utf-8")
 
-    st.download_button(
-        label="一時保存",
-        data=buffer,
-        file_name=filename,
-        mime="application/json"
-    )
+    # ✅ 前画面に戻れるbase64ダウンロードリンク
+    b64 = base64.b64encode(json_bytes).decode()
+    href = f'<a href="data:application/json;base64,{b64}" download="{filename}">✅ JSONファイルとして保存する（画面そのまま）</a>'
+    st.markdown(href, unsafe_allow_html=True)
 
-    # --- JSON 読み込み ---
+    # 💾 標準的なダウンロードボタン
+    st.download_button("💾 一時保存（Streamlitボタン）", data=BytesIO(json_bytes), file_name=filename)
+
+    st.markdown("---")
+    st.subheader("保存状態の読み込み")
     json_file = st.file_uploader("中途データ読込", type=["json"], key="json")
     if json_file:
         json_str = StringIO(json_file.getvalue().decode("utf-8")).read()
