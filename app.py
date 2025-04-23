@@ -35,10 +35,15 @@ if uploaded_file is not None:
             return ""
         if item in sub_df.index:
             match = sub_df.loc[item]
-            # 折り返しを防ぐため、省略表示を加える
-            truncated_effect = (match['効果'][:30] + '...') if len(match['効果']) > 30 else match['効果']
-            truncated_sp = (match['SP'][:20] + '...') if len(match['SP']) > 20 else match['SP']
-            return f"<span style='color: lightgray;'>（E: {match['E']}, 属性: {match['属性']}, SP: {truncated_sp}, 効果: {truncated_effect}）</span>"
+            # 折り返し表示を避けるため、省略処理を行う
+            truncated_info = {
+                "E": match['E'][:10],  # 最初の10文字だけ表示
+                "属性": match['属性'][:10],
+                "SP": match['SP'][:10],
+                "効果": match['効果'][:10]
+            }
+            # 省略表示を施したHTML表にまとめる
+            return f"<span style='color: lightgray;'>（E: {truncated_info['E']}..., 属性: {truncated_info['属性']}..., SP: {truncated_info['SP']}..., 効果: {truncated_info['効果']}...）</span>"
         return ""
 
     # --- ジャンプ機能 ---
@@ -66,11 +71,6 @@ if uploaded_file is not None:
     unchecked_count = df["checked"].value_counts().get(False, 0)
     st.markdown(f"**残り: {unchecked_count} 工程**")
 
-    # --- 見出し行 ---
-    st.markdown("### 項目別情報")
-    st.markdown("| 項目 | E | 属性 | SP | 効果 |")
-    st.markdown("|------|---|------|----|------|")
-
     # --- 上側の追加表示 ---
     if start > 1:
         with st.expander("欄外5件"):
@@ -95,10 +95,6 @@ if uploaded_file is not None:
             if st.button(base_text, key=idx):
                 st.session_state.checked[idx - 1] = True
                 st.rerun()
-    
-    # 情報をボタンの下に薄い文字で表示
-    if show_extra_info:
-        st.markdown(get_extra_info(row["item"]), unsafe_allow_html=True)
 
     # --- 下側の追加表示 ---
     if end < len(df):
