@@ -142,6 +142,8 @@ if uploaded_file is not None:
     hide_index=True
 )
 
+    
+    st.markdown("---")
     if st.button("リセット", help="チェックをリセット"):
         st.session_state.checked = [False] * len(df)
         st.rerun()
