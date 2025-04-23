@@ -64,6 +64,12 @@ if uploaded_file is not None:
         """
         return html
 
+    # 上部に「前の5件」を表示
+    if start > 1:
+        with st.expander("⬆️ 前の5件"):
+            for idx, row in df.loc[max(1, start - 5):start - 1].iterrows():
+                st.markdown(render_item_card(idx, row), unsafe_allow_html=True)
+
     # メイン表示
     for idx, row in display_df.iterrows():
         if idx == first_unchecked:
@@ -73,18 +79,11 @@ if uploaded_file is not None:
         else:
             st.markdown(render_item_card(idx, row), unsafe_allow_html=True)
 
-    # 上下欄外表示
-    def render_outside_df(df_part):
-        for idx, row in df_part.iterrows():
-            st.markdown(render_item_card(idx, row), unsafe_allow_html=True)
-
-    if start > 1:
-        with st.expander("⬆️ 前の5件"):
-            render_outside_df(df.loc[max(1, start - 5):start - 1])
-
+    # 下部欄外表示
     if end < len(df):
         with st.expander("⬇️ 次の5件"):
-            render_outside_df(df.loc[end + 1:min(end + 5, len(df))])
+            for idx, row in df.loc[end + 1:min(end + 5, len(df))].iterrows():
+                st.markdown(render_item_card(idx, row), unsafe_allow_html=True)
 
     if st.button("🔄 リセット", help="チェックをリセットします"):
         st.session_state.checked = [False] * len(df)
