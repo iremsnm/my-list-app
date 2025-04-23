@@ -41,7 +41,6 @@ if uploaded_file is not None:
     unchecked_count = st.session_state.checked.count(False)
     st.markdown(f"**残り: {unchecked_count} 工程**")
 
-    # 表示領域を2カラム（左にカードリスト、右に表）に分ける
     col1, col2 = st.columns([2, 1])
 
     with col1:
@@ -49,33 +48,51 @@ if uploaded_file is not None:
             item = row["item"]
             checked = st.session_state.checked[idx - 1]
 
-            card_style = """
-                padding: 10px;
-                margin-bottom: 10px;
-                border-radius: 10px;
-                cursor: pointer;
-                border: 1px solid #ccc;
-                transition: 0.2s all;
-            """
-
-            if checked:
-                card_style += "background-color: #eee; color: #999;"
-            else:
-                card_style += "background-color: white; color: black;"
+            card_color = "#eee" if checked else "white"
+            text_color = "#999" if checked else "black"
 
             card_html = f"""
-                <div onclick="fetch('/_stcore/rerun', {{method: 'POST'}})"
-                    style="{card_style}" 
-                    id="card-{idx}">
+                <div style='
+                    background-color: {card_color};
+                    color: {text_color};
+                    padding: 12px;
+                    margin-bottom: 10px;
+                    border: 1px solid #ccc;
+                    border-radius: 8px;
+                '>
                     <b>{idx}. {item}</b>
                     {get_extra_info(item)}
                 </div>
-                <script>
-                    const el = document.getElementById("card-{idx}");
-                    el.addEventListener("click", () => {{
-                        fetch("/", {{
-                            method: "POST",
-                            headers: {{
-                                "Content-Type": "application/json"
-                            }},
-                            body: JSON.stringify({{"
+            """
+
+            if st.button(f"　", key=f"card_{idx}"):  # invisible label
+                st.session_state.checked[idx - 1] = not checked
+                st.rerun()
+
+            st.markdown(card_html, unsafe_allow_html=True)
+
+    with col2:
+        table_data = []
+        for idx, row in df.iterrows():
+            item = row["item"]
+            if item in sub_df.index:
+                info = sub_df.loc[item]
+                table_data.append({
+                    "No.": idx,
+                    "副原料": item,
+                    "E": info["E"],
+                    "属性": info["属性"],
+                    "SP": info["SP"],
+                    "効果": info["効果"],
+                    "状態": "済" if st.session_state.checked[idx - 1] else ""
+                })
+
+        if table_data:
+            info_df = pd.DataFrame(table_data)
+            st.dataframe(info_df, use_container_width=True)
+
+    st.markdown("---")
+
+    if st.button("リセット", help="チェック状況をリセット"):
+        st.session_state.checked = [False] * len(df)
+        st.rerun()
