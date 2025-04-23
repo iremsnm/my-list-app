@@ -47,6 +47,18 @@ if uploaded_file is not None:
     unchecked_count = df["checked"].value_counts().get(False, 0)
     st.markdown(f"**残り: {unchecked_count} 工程**")
 
+    # --- 上側の追加表示 ---
+    if start > 1:
+        with st.expander("⬆️ 上に5件表示"):
+            extra_top_df = df.loc[max(1, start - 5):start - 1]
+            for idx, row in extra_top_df.iterrows():
+                text = f"{idx}. {row['item']}"
+                if row["checked"]:
+                    st.markdown(f"<span style='color: gray;'>{text}</span>", unsafe_allow_html=True)
+                else:
+                    st.markdown(text)
+
+    # メイン表示
     for idx, row in sub_df.iterrows():
         text = f"{idx}. {row['item']}"
         if row["checked"]:
@@ -57,6 +69,17 @@ if uploaded_file is not None:
                 st.rerun()
         else:
             st.markdown(text)
+
+    # --- 下側の追加表示 ---
+    if end < len(df):
+        with st.expander("⬇️ 下に5件表示"):
+            extra_bottom_df = df.loc[end + 1:min(end + 5, len(df))]
+            for idx, row in extra_bottom_df.iterrows():
+                text = f"{idx}. {row['item']}"
+                if row["checked"]:
+                    st.markdown(f"<span style='color: gray;'>{text}</span>", unsafe_allow_html=True)
+                else:
+                    st.markdown(text)
 
     if st.button("リセット", help="チェック状況をリセット"):
         st.session_state.checked = [False] * len(df)
