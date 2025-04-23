@@ -109,13 +109,11 @@ if uploaded_file is not None:
     json_data = json.dumps(st.session_state.checked, indent=2, ensure_ascii=False)
     json_bytes = json_data.encode("utf-8")
 
-    # ✅ 前画面に戻れるbase64ダウンロードリンク
+    # 前画面に戻れるbase64ダウンロードリンク
     b64 = base64.b64encode(json_bytes).decode()
-    href = f'<a href="data:application/json;base64,{b64}" download="{filename}">✅ JSONファイルとして保存する（画面そのまま）</a>'
+    href = f'<a href="data:application/json;base64,{b64}" download="{filename}">中途データ保存</a>'
     st.markdown(href, unsafe_allow_html=True)
 
-    # 💾 標準的なダウンロードボタン
-    st.download_button("💾 一時保存（Streamlitボタン）", data=BytesIO(json_bytes), file_name=filename)
 
     st.markdown("---")
     st.subheader("保存状態の読み込み")
