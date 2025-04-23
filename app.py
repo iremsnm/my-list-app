@@ -18,6 +18,10 @@ if uploaded_file is not None:
 
     df["checked"] = st.session_state.checked
 
+        # 区切り線を設定
+    st.markdown("---")
+
+    
     # --- ジャンプ機能 ---
     jump_to = st.number_input("行番号を指定してジャンプ", min_value=1, max_value=len(df), step=1)
     if st.button("ジャンプ", key="jump_button"):
@@ -26,7 +30,7 @@ if uploaded_file is not None:
             st.session_state.checked[i] = True
         st.rerun()
         
-    # 余白を設定
+    # 区切り線を設定
     st.markdown("---")
     
 
@@ -63,7 +67,7 @@ if uploaded_file is not None:
         st.session_state.checked = [False] * len(df)
         st.rerun()
         
-    # 余白を設定
+    # 区切り線を設定
     st.markdown("---")
 
     
