@@ -1,11 +1,9 @@
 import pandas as pd
 import streamlit as st
 import json
-from io import StringIO
+from io import StringIO, BytesIO
 from datetime import datetime
 import pytz
-import base64
-
 
 st.title("check list")
 
@@ -20,31 +18,32 @@ if uploaded_file is not None:
 
     df["checked"] = st.session_state.checked
 
-    checked_indices = [i for i, val in enumerate(df["checked"], 1) if val]
-    latest_checked = checked_indices[-1] if checked_indices else 1
+    # --- 行ジャンプ機能 ---
+    jump_to = st.number_input("行番号を指定してジャンプ（1〜{}）".format(len(df)), min_value=1, max_value=len(df), value=1)
+    if "jump_index" not in st.session_state:
+        st.session_state.jump_index = jump_to
 
-    try:
-        first_unchecked = df.index[df["checked"] == False][0]
-    except IndexError:
-        first_unchecked = None
+    if st.button("ジャンプする"):
+        st.session_state.jump_index = jump_to
 
-    start = max(latest_checked - 5, 1)
-    end = min((first_unchecked or latest_checked) + 5, len(df))
+    # 表示範囲の調整
+    base_index = st.session_state.jump_index
+    start = max(base_index - 5, 1)
+    end = min(base_index + 5, len(df))
     sub_df = df.loc[start:end]
 
     unchecked_count = df["checked"].value_counts().get(False, 0)
     st.markdown(f"**残り: {unchecked_count} 工程**")
 
+    # チェック表示
     for idx, row in sub_df.iterrows():
         text = f"{idx}. {row['item']}"
         if row["checked"]:
             st.markdown(f"<span style='color: gray;'>{text}</span>", unsafe_allow_html=True)
-        elif idx == first_unchecked:
-            
-            if st.button(text, key=idx, help="クリックしてチェック", use_container_width=True):
+        elif idx == df[~df["checked"]].index.min():
+            if st.button(text, key=f"check_{idx}"):
                 st.session_state.checked[idx - 1] = True
                 st.rerun()
-
         else:
             st.markdown(text)
 
@@ -52,19 +51,21 @@ if uploaded_file is not None:
         st.session_state.checked = [False] * len(df)
         st.rerun()
 
-    # --- 保存リンク生成 ---
-    st.markdown("---")
+    # --- 保存処理（日本時間付きファイル名） ---
     japan_tz = pytz.timezone('Asia/Tokyo')
     now = datetime.now(japan_tz).strftime("%Y%m%d_%H-%M-%S")
     filename = f"check_state_{now}.json"
-    json_data = json.dumps(st.session_state.checked, indent=2, ensure_ascii=False)
+    json_bytes = json.dumps(st.session_state.checked, indent=2, ensure_ascii=False).encode("utf-8")
+    buffer = BytesIO(json_bytes)
 
-    # base64 エンコードしてダウンロードリンク生成
-    b64 = base64.b64encode(json_data.encode()).decode()
-    href = f'<a href="data:application/json;base64,{b64}" download="{filename}">保存</a>'
-    st.markdown(href, unsafe_allow_html=True)
+    st.download_button(
+        label="中途データを生成・保存",
+        data=buffer,
+        file_name=filename,
+        mime="application/json"
+    )
 
-    # --- 読み込み（下部） ---
+    # --- 読み込み ---
     json_file = st.file_uploader("中途データ読込み", type=["json"], key="json")
 
     if json_file is not None:
