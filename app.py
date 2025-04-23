@@ -25,8 +25,9 @@ if uploaded_file is not None:
         for i in range(jump_to - 1):
             st.session_state.checked[i] = True
         st.rerun()
-        # 余白を設定
-        st.markdown("<div style='margin-bottom: 50px;'></div>", unsafe_allow_html=True)
+        
+    # 余白を設定
+    st.markdown("<div style='margin-bottom: 50px;'></div>", unsafe_allow_html=True) 
     
 
     # チェック状態を反映
@@ -61,8 +62,9 @@ if uploaded_file is not None:
     if st.button("リセット", help="チェック状況をリセット"):
         st.session_state.checked = [False] * len(df)
         st.rerun()
-        # 余白を設定
-        st.markdown("<div style='margin-bottom: 50px;'></div>", unsafe_allow_html=True) 
+        
+    # 余白を設定
+    st.markdown("<div style='margin-bottom: 50px;'></div>", unsafe_allow_html=True) 
 
     
     # --- 保存処理 ---
