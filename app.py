@@ -10,7 +10,7 @@ st.set_page_config(layout="wide")
 st.title("check list")
 
 uploaded_file = st.file_uploader("CSVファイルをアップロードしてください", type=["csv"])
-sub_material_file = st.file_uラー("副原料リストをアップロードしてください", type=["csv"], key="sub_material")
+sub_material_file = st.file_uploader("副原料リストをアップロードしてください", type=["csv"], key="sub_material")
 
 if uploaded_file is not None:
     df = pd.read_csv(uploaded_file, header=None, names=["item"])
