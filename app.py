@@ -5,41 +5,50 @@ from io import StringIO, BytesIO
 from datetime import datetime
 import pytz
 
-st.set_page_config(layout="wide")
-st.title("✅ チェックリスト")
+st.set_page_config(page_title="Check List", layout="wide")
+st.title("check list")
 
-uploaded_file = st.file_uploader("📄 CSVファイルをアップロード", type=["csv"])
-sub_material_file = st.file_uploader("🧂 副原料リスト（オプション）", type=["csv"], key="sub_material")
+uploaded_file = st.file_uploader("CSVファイルをアップロードしてください", type=["csv"])
+sub_material_file = st.file_uploader("副原料リストをアップロードしてください", type=["csv"], key="sub_material")
 
 if uploaded_file is not None:
     df = pd.read_csv(uploaded_file, header=None, names=["item"])
-    df.index += 1
+    df.index = df.index + 1
 
-    if sub_material_file is not None:
-        sub_df = pd.read_csv(sub_material_file).set_index("副原料")
-    else:
-        sub_df = pd.DataFrame()
+    sub_df = pd.read_csv(sub_material_file).set_index("副原料") if sub_material_file is not None else pd.DataFrame()
 
     if "checked" not in st.session_state or len(st.session_state.checked) != len(df):
         st.session_state.checked = [False] * len(df)
 
     df["checked"] = st.session_state.checked
 
-    show_extra_info = st.toggle("🔍 副原料の詳細表示", value=True)
+    show_extra_info = st.toggle("副原料の追加情報を表示", value=True)
 
     def get_extra_info(item):
         if not show_extra_info or sub_df.empty or item not in sub_df.index:
             return ""
         match = sub_df.loc[item]
-        return (
-            f"<br><span style='font-size: 0.8em; color: gray;'>"
-            f"E: {match['E']} | 属性: {match['属性']} | SP: {match['SP']} | 効果: {match['効果']}</span>"
-        )
+        return f"E: {match['E']} | 属性: {match['属性']} | SP: {match['SP']} | 効果: {match['効果']}"
 
-    unchecked_count = df["checked"].value_counts().get(False, 0)
-    st.markdown(f"### 🧮 残り工程数: {unchecked_count}")
+    st.markdown("---")
 
-    # 表示範囲の調整
+    # 行をクリックしてチェック状態を切り替える
+    def render_card(idx, row):
+        col1, col2 = st.columns([3, 7])
+        with col1:
+            # 状態保存用フォームで rerun 抑制
+            with st.form(f"form_{idx}"):
+                if st.form_submit_button("", use_container_width=True):
+                    st.session_state.checked[idx - 1] = not st.session_state.checked[idx - 1]
+        with col2:
+            extra = get_extra_info(row["item"])
+            card_style = (
+                "background-color: #f0f0f0; padding: 10px; margin: 5px 0; border-radius: 5px; cursor: pointer;"
+            )
+            text_color = "gray" if row["checked"] else "black"
+            content = f"<div style='{card_style}; color:{text_color}'><b>{idx}. {row['item']}</b><br><small>{extra}</small></div>"
+            st.markdown(content, unsafe_allow_html=True)
+
     checked_indices = [i for i, val in enumerate(df["checked"], 1) if val]
     latest_checked = checked_indices[-1] if checked_indices else 1
     try:
@@ -49,78 +58,58 @@ if uploaded_file is not None:
 
     start = max(latest_checked - 5, 1)
     end = min((first_unchecked or latest_checked) + 5, len(df))
-    main_display_df = df.loc[start:end]
+    sub_df_display = df.loc[start:end]
 
-    def render_card(idx, row):
-        extra = get_extra_info(row["item"])
-        card_style = (
-            "background-color: #f0f0f0;" if row["checked"] else "background-color: #ffffff;"
-        )
-        text_color = "gray" if row["checked"] else "black"
-        html = f"""
-            <div style='border: 1px solid #ccc; padding: 10px; border-radius: 5px; margin-bottom: 10px; {card_style} cursor: pointer;' onclick="fetch('/?card_click={idx}', {{method: 'GET'}})">
-                <span style='font-size: 1rem; color: {text_color};'><strong>{idx}. {row["item"]}</strong></span>
-                {extra}
-            </div>
-        """
-        return html
+    unchecked_count = df["checked"].value_counts().get(False, 0)
+    st.markdown(f"**残り: {unchecked_count} 工程**")
 
-    st.markdown("---")
-    # JavaScript hack to handle card clicks
-    query_params = st.experimental_get_query_params()
-    if "card_click" in query_params:
-        clicked_idx = int(query_params["card_click"][0])
-        st.session_state.checked[clicked_idx - 1] = not st.session_state.checked[clicked_idx - 1]
-        st.experimental_set_query_params()  # clear query
-        st.rerun()
+    # --- 上側表示 ---
+    if start > 1:
+        with st.expander("欄外5件"):
+            extra_top_df = df.loc[max(1, start - 5):start - 1]
+            for idx, row in extra_top_df.iterrows():
+                render_card(idx, row)
 
-    # 2カラムレイアウト：左にカード、右に表
-    col1, col2 = st.columns([2, 3])
-    with col1:
-        for idx, row in main_display_df.iterrows():
-            st.markdown(render_card(idx, row), unsafe_allow_html=True)
+    # --- メイン表示 ---
+    for idx, row in sub_df_display.iterrows():
+        render_card(idx, row)
 
-    with col2:
-        table_data = []
-        for idx, row in main_display_df.iterrows():
-            if show_extra_info and row["item"] in sub_df.index:
-                d = sub_df.loc[row["item"]]
-                table_data.append({
-                    "行": idx,
-                    "項目": row["item"],
-                    "E": d["E"],
-                    "属性": d["属性"],
-                    "SP": d["SP"],
-                    "効果": d["効果"],
-                    "状態": "✔️" if row["checked"] else "❌"
-                })
-        if table_data:
-            table_df = pd.DataFrame(table_data)
-            table_df_style = table_df.style.applymap(
-                lambda val: "color: gray;" if val == "✔️" else ""
-            )
-            st.dataframe(table_df_style, use_container_width=True)
+    # --- 下側表示 ---
+    if end < len(df):
+        with st.expander("欄外5件"):
+            extra_bottom_df = df.loc[end + 1:min(end + 5, len(df))]
+            for idx, row in extra_bottom_df.iterrows():
+                render_card(idx, row)
 
-    # --- リセットボタン ---
-    if st.button("🔄 チェックをリセット"):
+    # --- リセット ---
+    if st.button("リセット"):
         st.session_state.checked = [False] * len(df)
         st.rerun()
 
+    st.markdown("---")
+
     # --- 保存処理 ---
-    japan_tz = pytz.timezone('Asia/Tokyo')
-    now = datetime.now(japan_tz).strftime("%Y%m%d_%H-%M-%S")
+    now = datetime.now(pytz.timezone('Asia/Tokyo')).strftime("%Y%m%d_%H-%M-%S")
     filename = f"check_state_{now}.json"
-    json_bytes = json.dumps(st.session_state.checked, indent=2, ensure_ascii=False).encode("utf-8")
-    st.download_button("💾 一時保存", data=BytesIO(json_bytes), file_name=filename, mime="application/json")
+    buffer = BytesIO(json.dumps(st.session_state.checked, indent=2, ensure_ascii=False).encode("utf-8"))
+    st.download_button("一時保存", data=buffer, file_name=filename, mime="application/json")
 
     # --- 読み込み処理 ---
-    json_file = st.file_uploader("📥 状態読込（json）", type=["json"])
+    json_file = st.file_uploader("中途データ読込み", type=["json"], key="json")
     if json_file is not None:
-        json_str = StringIO(json_file.getvalue().decode("utf-8")).read()
-        loaded_state = json.loads(json_str)
+        loaded_state = json.load(json_file)
         if len(loaded_state) == len(df):
             st.session_state.checked = loaded_state
             st.rerun()
         else:
-            st.warning("JSONファイルの行数が一致しません。")
+            st.warning("JSONとCSVの行数が一致しません。")
 
+    # --- 集計表示 ---
+    st.markdown("---")
+    st.markdown("### count")
+    total_counts = df["item"].value_counts().rename("必要数")
+    checked_counts = df[df["checked"]]["item"].value_counts().rename("チェック済み")
+    summary_df = pd.concat([total_counts, checked_counts], axis=1).fillna(0).astype(int)
+    summary_df["残"] = summary_df["必要数"] - summary_df["チェック済み"]
+    summary_df = summary_df.reset_index().rename(columns={"index": "項目"})
+    st.dataframe(summary_df, use_container_width=True)
