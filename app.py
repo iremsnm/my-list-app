@@ -5,9 +5,9 @@ from io import StringIO, BytesIO
 from datetime import datetime
 import pytz
 
+st.set_page_config(layout="wide")
 st.title("check list")
 
-# ファイルアップロード
 uploaded_file = st.file_uploader("CSVファイルをアップロードしてください", type=["csv"])
 sub_material_file = st.file_uploader("副原料リストをアップロードしてください", type=["csv"], key="sub_material")
 
@@ -27,19 +27,16 @@ if uploaded_file is not None:
     df["checked"] = st.session_state.checked
 
     st.markdown("---")
-
-    # ON/OFFトグル
     show_extra_info = st.toggle("副原料の追加情報を表示", value=True)
 
     def get_extra_info(item):
         if not show_extra_info or sub_df.empty:
-            return ""
+            return ["", "", "", ""]
         if item in sub_df.index:
             match = sub_df.loc[item]
-            return f"<span style='color: lightgray;'>（E: {match['E']}, 属性: {match['属性']}, SP: {match['SP']}, 効果: {match['効果']}）</span>"
-        return ""
+            return [match['E'], match['属性'], match['SP'], match['効果']]
+        return ["", "", "", ""]
 
-    # --- ジャンプ機能 ---
     jump_to = st.number_input("行番号を指定してジャンプ", min_value=1, max_value=len(df), step=1)
     if st.button("ジャンプ", key="jump_button"):
         for i in range(jump_to - 1):
@@ -48,7 +45,6 @@ if uploaded_file is not None:
 
     st.markdown("---")
 
-    # チェック状態を反映
     df["checked"] = st.session_state.checked
     checked_indices = [i for i, val in enumerate(df["checked"], 1) if val]
     latest_checked = checked_indices[-1] if checked_indices else 1
@@ -65,54 +61,41 @@ if uploaded_file is not None:
     unchecked_count = df["checked"].value_counts().get(False, 0)
     st.markdown(f"**残り: {unchecked_count} 工程**")
 
+    def display_row(idx, row):
+        e, attr, sp, effect = get_extra_info(row["item"])
+        col1, col2 = st.columns([1, 3])
+        with col1:
+            base_text = f"{idx}. {row['item']}"
+            if row["checked"]:
+                st.markdown(f"<span style='color: gray;'>{base_text}</span>", unsafe_allow_html=True)
+            elif idx == first_unchecked:
+                if st.button(base_text, key=idx):
+                    st.session_state.checked[idx - 1] = True
+                    st.rerun()
+            else:
+                st.markdown(base_text)
+        with col2:
+            row_style = "color: gray;" if row["checked"] else ""
+            st.markdown(
+                f"<div style='white-space: pre-wrap; {row_style}'>"
+                f"E: {e} | 属性: {attr} | SP: {sp} | 効果: {effect}"
+                f"</div>", unsafe_allow_html=True)
+
     # --- 上側の追加表示 ---
     if start > 1:
         with st.expander("欄外5件"):
             extra_top_df = df.loc[max(1, start - 5):start - 1]
             for idx, row in extra_top_df.iterrows():
-                full_text = f"{idx}. {row['item']} {get_extra_info(row['item'])}"
-                if row["checked"]:
-                    st.markdown(f"<span style='color: gray;'>{full_text}</span>", unsafe_allow_html=True)
-                else:
-                    st.markdown(full_text, unsafe_allow_html=True)
+                display_row(idx, row)
 
-    # --- メイン表示 ---
-    col1, col2 = st.columns([1, 2])  # カラムを2分割
+    for idx, row in sub_df_display.iterrows():
+        display_row(idx, row)
 
-    with col1:  # 左側はリスト
-        for idx, row in sub_df_display.iterrows():
-            base_text = f"{idx}. {row['item']}"
-            extra_info_html = get_extra_info(row["item"])
-            full_html = base_text + " " + extra_info_html
-
-            if row["checked"]:
-                st.markdown(f"<span style='color: gray; white-space: pre-wrap;'>{full_html}</span>", unsafe_allow_html=True)
-            elif idx == first_unchecked:
-                if st.button(base_text, key=idx):
-                    st.session_state.checked[idx - 1] = True
-                    st.rerun()
-    
-    # --- チェックリスト状態と副原料情報を別シートに分けて表示 ---
-    with col2:  # 右側は情報表示
-        st.markdown("### チェックリスト状態")
-        checklist_df = df[['item', 'checked']].copy()
-        checklist_df['checked'] = checklist_df['checked'].apply(lambda x: '✔️' if x else '❌')
-        st.dataframe(checklist_df)
-
-        st.markdown("### 副原料の効果")
-        if not sub_df.empty:
-            st.dataframe(sub_df[['E', '属性', 'SP', '効果']])
-
-    # --- 下側の追加表示 ---
     if end < len(df):
         with st.expander("欄外5件"):
             extra_bottom_df = df.loc[end + 1:min(end + 5, len(df))]
             for idx, row in extra_bottom_df.iterrows():
-                full_text = f"{idx}. {row['item']} {get_extra_info(row['item'])}"
-                if row["checked"]:
-                    st.markdown(f"<span style='color: gray;'>{full_text}</span>", unsafe_allow_html=True)
-                else:
-                    st.markdown(full_text, unsafe_allow_html=True)
+                display_row(idx, row)
 
     if st.button("リセット", help="チェック状況をリセット"):
         st.session_state.checked = [False] * len(df)
@@ -120,7 +103,6 @@ if uploaded_file is not None:
 
     st.markdown("---")
 
-    # --- 保存処理 ---
     japan_tz = pytz.timezone('Asia/Tokyo')
     now = datetime.now(japan_tz).strftime("%Y%m%d_%H-%M-%S")
     filename = f"check_state_{now}.json"
@@ -134,7 +116,6 @@ if uploaded_file is not None:
         mime="application/json"
     )
 
-    # --- 読み込み ---
     json_file = st.file_uploader("中途データ読込み", type=["json"], key="json")
     if json_file is not None:
         json_str = StringIO(json_file.getvalue().decode("utf-8")).read()
@@ -147,7 +128,6 @@ if uploaded_file is not None:
         else:
             st.warning("JSONとCSVの行数が一致しません。")
 
-    # --- 集計表の表示 ---
     st.markdown("---")
     st.markdown("### count")
 
