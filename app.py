@@ -75,30 +75,18 @@ if uploaded_file is not None:
                     st.markdown(full_text, unsafe_allow_html=True)
 
     # --- メイン表示 ---
-    col1, col2 = st.columns([3, 1])  # 2列に分けて表示
-    with col1:
-        for idx, row in sub_df_display.iterrows():
-            base_text = f"{idx}. {row['item']}"
-            extra_info_html = get_extra_info(row["item"])
-            full_html = base_text + " " + extra_info_html
+    for idx, row in sub_df_display.iterrows():
+        base_text = f"{idx}. {row['item']}"
+        extra_info_html = get_extra_info(row["item"])
+        full_html = base_text + " " + extra_info_html
 
-            if row["checked"]:
-                st.markdown(f"<span style='color: gray; white-space: pre-wrap;'>{full_html}</span>", unsafe_allow_html=True)
-            elif idx == first_unchecked:
-                if st.button(base_text, key=idx):
-                    st.session_state.checked[idx - 1] = True
-                    st.rerun()
-
-    # 横並びで表示された項目情報（チェック済みならグレーアウト）
-    with col2:
-        for idx, row in sub_df_display.iterrows():
-            base_text = f"{idx}. {row['item']}"
-            extra_info_html = get_extra_info(row["item"])
-
-            if row["checked"]:
-                st.markdown(f"<span style='color: gray;'>{extra_info_html}</span>", unsafe_allow_html=True)
-            else:
-                st.markdown(extra_info_html)
+        if row["checked"]:
+            st.markdown(f"<span style='color: gray; white-space: pre-wrap;'>{full_html}</span>", unsafe_allow_html=True)
+        # チェックボタン表示
+        if idx == first_unchecked:
+            if st.button(base_text, key=idx):
+                st.session_state.checked[idx - 1] = True
+                st.rerun()
 
     # --- 下側の追加表示 ---
     if end < len(df):
@@ -157,3 +145,12 @@ if uploaded_file is not None:
 
     if "json_loaded_once" in st.session_state:
         del st.session_state["json_loaded_once"]
+
+    # --- タブの表示 ---
+    st.sidebar.markdown("### タブメニュー")
+    tab_selection = st.sidebar.radio("選択してください", ["リスト", "詳細情報"])
+
+    if tab_selection == "リスト":
+        st.write("リストタブ")
+    elif tab_selection == "詳細情報":
+        st.write("詳細情報タブ")
