@@ -82,16 +82,12 @@ if uploaded_file is not None:
 
         if row["checked"]:
             st.markdown(f"<span style='color: gray; white-space: pre-wrap;'>{full_html}</span>", unsafe_allow_html=True)
-        # チェックボタン表示
-        if idx == first_unchecked:
+        elif idx == first_unchecked:
             if st.button(base_text, key=idx):
                 st.session_state.checked[idx - 1] = True
                 st.rerun()
-    
-    # 情報をボタンの下に薄い文字で表示
-    if show_extra_info:
-        st.markdown(get_extra_info(row["item"]), unsafe_allow_html=True)
-
+            if show_extra_info:
+                st.markdown(extra_info_html, unsafe_allow_html=True)
         else:
             st.markdown(full_html, unsafe_allow_html=True)
 
