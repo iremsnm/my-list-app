@@ -8,8 +8,8 @@ import pytz
 st.set_page_config(layout="wide")
 st.title("check list")
 
-uploaded_file = st.file_uploader("リスト作成用ファイルをアップロード", type=["csv"])
-sub_material_file = st.file_uploader("紐付け用ファイルをアップロード", type=["csv"], key="sub_material")
+uploaded_file = st.file_uploader("チャートリストをアップロード", type=["csv"])
+sub_material_file = st.file_uploader("情報用リストをアップロード", type=["csv"], key="sub_material")
 
 if uploaded_file is not None:
     df = pd.read_csv(uploaded_file, header=None, names=["item"])
@@ -22,7 +22,7 @@ if uploaded_file is not None:
 
     df["checked"] = st.session_state.checked
 
-    show_extra_info = st.toggle("詳細", value=True)
+    show_extra_info = st.toggle("副原料の追加情報を表示", value=True)
 
     def get_extra_info_html(item):
         if not show_extra_info or sub_df.empty or item not in sub_df.index:
@@ -49,13 +49,25 @@ if uploaded_file is not None:
     end = min((first_unchecked or latest_checked) + 5, len(df))
     display_df = df.loc[start:end]
 
-    st.markdown(f"残 **{df['checked'].value_counts().get(False, 0)}** step")
+    st.markdown(f"残り **{df['checked'].value_counts().get(False, 0)}** step")
 
     # 表示用関数
     def render_item_card(idx, row):
         bg = "#f9f9f9"
         border = "solid 1px #ccc"
         color = "gray" if row["checked"] else "black"
+        
+        # チェック済みカードの色を変更
+        if row["checked"] and idx != checked_indices[-1]:
+            # 直近1枚を飛ばして、3枚だけ色変更
+            previous_checked = checked_indices[:-1][-3:]  # 直近1枚を除いた3枚を取得
+            if idx in previous_checked:
+                bg = "#d3ffd3"  # チェック済みカードを淡い緑色に
+
+        # 直近の1枚を水色に変更
+        if idx == latest_checked:
+            bg = "#d3f7ff"  # 直近チェック済みカードを水色に
+        
         html = f"""
         <div style='background:{bg};border-radius:8px;border:{border};padding:12px;margin-bottom:10px;'>
             <div style='color:{color};font-weight:bold;'>{idx}. {row['item']}</div>
@@ -66,7 +78,7 @@ if uploaded_file is not None:
 
     # 上部に「前の5件」を表示
     if start > 1:
-        with st.expander(""):
+        with st.expander("前の5件"):
             for idx, row in df.loc[max(1, start - 5):start - 1].iterrows():
                 st.markdown(render_item_card(idx, row), unsafe_allow_html=True)
 
@@ -81,7 +93,7 @@ if uploaded_file is not None:
 
     # 下部欄外表示
     if end < len(df):
-        with st.expander(""):
+        with st.expander("次の5件"):
             for idx, row in df.loc[end + 1:min(end + 5, len(df))].iterrows():
                 st.markdown(render_item_card(idx, row), unsafe_allow_html=True)
 
@@ -96,7 +108,7 @@ if uploaded_file is not None:
     json_bytes = json.dumps(st.session_state.checked, indent=2, ensure_ascii=False).encode("utf-8")
     st.download_button("一時保存", data=BytesIO(json_bytes), file_name=f"check_state_{now}.json")
 
-    json_file = st.file_uploader("中途データ読込み", type=["json"], key="json")
+    json_file = st.file_uploader("中途データ読込", type=["json"], key="json")
     if json_file:
         json_str = StringIO(json_file.getvalue().decode("utf-8")).read()
         loaded = json.loads(json_str)
