@@ -35,7 +35,7 @@ if uploaded_file is not None:
             return ""
         if item in sub_df.index:
             match = sub_df.loc[item]
-            return f"（E: {match['E']}, 属性: {match['属性']}, SP: {match['SP']}, 効果: {match['効果']}）"
+            return f"<span style='color: lightgray;'>（E: {match['E']}, 属性: {match['属性']}, SP: {match['SP']}, 効果: {match['効果']}）</span>"
         return ""
 
     # --- ジャンプ機能 ---
@@ -80,13 +80,31 @@ if uploaded_file is not None:
         extra_info_html = get_extra_info(row["item"])
         full_html = base_text + " " + extra_info_html
 
-        if row["checked"]:
-            st.markdown(f"<span style='color: gray; white-space: pre-wrap;'>{full_html}</span>", unsafe_allow_html=True)
-        # チェックボタン表示
-        if idx == first_unchecked:
-            if st.button(base_text, key=idx):
-                st.session_state.checked[idx - 1] = True
-                st.rerun()
+        # 横並びレイアウト
+        col1, col2 = st.columns([3, 7])  # レイアウトを調整
+        with col1:
+            if row["checked"]:
+                st.markdown(f"<span style='color: gray;'>{base_text}</span>", unsafe_allow_html=True)
+            else:
+                if idx == first_unchecked:
+                    if st.button(base_text, key=idx):
+                        st.session_state.checked[idx - 1] = True
+                        st.rerun()
+                else:
+                    st.markdown(base_text)
+
+        with col2:
+            if not sub_df.empty and row["item"] in sub_df.index:
+                match = sub_df.loc[row['item']]
+                extra_info = f"E: {match['E']}, 属性: {match['属性']}, SP: {match['SP']}, 効果: {match['効果']}"
+                if row["checked"]:
+                    st.markdown(f"<span style='color: gray;'>{extra_info}</span>", unsafe_allow_html=True)
+                else:
+                    st.markdown(extra_info)
+
+    # 情報をボタンの下に薄い文字で表示
+    if show_extra_info:
+        st.markdown(get_extra_info(row["item"]), unsafe_allow_html=True)
 
     # --- 下側の追加表示 ---
     if end < len(df):
