@@ -19,6 +19,8 @@ if uploaded_file is not None:
 
     if "checked" not in st.session_state or len(st.session_state.checked) != len(df):
         st.session_state.checked = [False] * len(df)
+    st.markdown("---")
+
 
     df["checked"] = st.session_state.checked
 
@@ -45,9 +47,18 @@ if uploaded_file is not None:
     except IndexError:
         first_unchecked = None
 
-    start = max(latest_checked - 5, 1)
-    end = min((first_unchecked or latest_checked) + 5, len(df))
+    start = max(latest_checked - 4, 1)
+    end = min((first_unchecked or latest_checked) + 4, len(df))
     display_df = df.loc[start:end]
+
+    # --- ジャンプ機能 ---
+    with st.container():
+        jump_to = st.number_input("行番号を指定してジャンプ", min_value=1, max_value=len(df), step=1)
+        if st.button("ジャンプ", key="jump_button"):
+            for i in range(jump_to - 1):
+                st.session_state.checked[i] = True
+            st.rerun()
+    st.markdown("---")
 
     st.markdown(f"残り **{df['checked'].value_counts().get(False, 0)}** step")
 
@@ -57,17 +68,14 @@ if uploaded_file is not None:
         border = "solid 1px #ccc"
         color = "gray" if row["checked"] else "black"
         
-        # チェック済みカードの色を変更
         if row["checked"] and idx != checked_indices[-1]:
-            # 直近1枚を飛ばして、3枚だけ色変更
-            previous_checked = checked_indices[:-1][-3:]  # 直近1枚を除いた3枚を取得
+            previous_checked = checked_indices[:-1][-3:]
             if idx in previous_checked:
-                bg = "#d3ffd3"  # チェック済みカードを淡い緑色に
+                bg = "#d3ffd3"
 
-        # 直近の1枚を水色に変更
         if idx == latest_checked:
-            bg = "#d3f7ff"  # 直近チェック済みカードを水色に
-        
+            bg = "#d3f7ff"
+
         html = f"""
         <div style='background:{bg};border-radius:8px;border:{border};padding:12px;margin-bottom:10px;'>
             <div style='color:{color};font-weight:bold;'>{idx}. {row['item']}</div>
@@ -76,13 +84,11 @@ if uploaded_file is not None:
         """
         return html
 
-    # 上部に「前の5件」を表示
     if start > 1:
         with st.expander("前の5件"):
             for idx, row in df.loc[max(1, start - 5):start - 1].iterrows():
                 st.markdown(render_item_card(idx, row), unsafe_allow_html=True)
 
-    # メイン表示
     for idx, row in display_df.iterrows():
         if idx == first_unchecked:
             if st.button(f"{idx}. {row['item']}", key=f"btn_{idx}", use_container_width=True):
@@ -91,19 +97,18 @@ if uploaded_file is not None:
         else:
             st.markdown(render_item_card(idx, row), unsafe_allow_html=True)
 
-    # 下部欄外表示
     if end < len(df):
         with st.expander("次の5件"):
             for idx, row in df.loc[end + 1:min(end + 5, len(df))].iterrows():
                 st.markdown(render_item_card(idx, row), unsafe_allow_html=True)
+    st.markdown("---")
+
 
     if st.button("リセット", help="チェックをリセット"):
         st.session_state.checked = [False] * len(df)
         st.rerun()
-
     st.markdown("---")
 
-    # 保存・読込機能
     now = datetime.now(pytz.timezone("Asia/Tokyo")).strftime("%Y%m%d_%H-%M-%S")
     json_bytes = json.dumps(st.session_state.checked, indent=2, ensure_ascii=False).encode("utf-8")
     st.download_button("一時保存", data=BytesIO(json_bytes), file_name=f"check_state_{now}.json")
@@ -118,7 +123,6 @@ if uploaded_file is not None:
         else:
             st.warning("行数が一致しません")
 
-    # 集計表示
     st.markdown("---")
     st.markdown("count")
     total = df["item"].value_counts().rename("必要数")
