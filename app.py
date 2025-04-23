@@ -5,7 +5,7 @@ from io import StringIO, BytesIO
 from datetime import datetime
 import pytz
 
-st.set_page_config(layout="wide")
+st.set_page_config(layout="wide")  # ワイドレイアウトでスマホ対応
 st.title("check list")
 
 uploaded_file = st.file_uploader("CSVファイルをアップロードしてください", type=["csv"])
@@ -28,21 +28,19 @@ if uploaded_file is not None:
 
     show_extra_info = st.toggle("副原料の追加情報を表示", value=True)
 
-    def get_extra_info_row(item):
-        if not show_extra_info or sub_df.empty or item not in sub_df.index:
-            return ["", "", "", ""]
-        match = sub_df.loc[item]
-        return [match["E"], match["属性"], match["SP"], match["効果"]]
-
-    st.markdown("---")
+    def get_extra_info(item):
+        if not show_extra_info or sub_df.empty:
+            return {"E": "", "属性": "", "SP": "", "効果": ""}
+        if item in sub_df.index:
+            match = sub_df.loc[item]
+            return match.to_dict()
+        return {"E": "", "属性": "", "SP": "", "効果": ""}
 
     jump_to = st.number_input("行番号を指定してジャンプ", min_value=1, max_value=len(df), step=1)
     if st.button("ジャンプ", key="jump_button"):
         for i in range(jump_to - 1):
             st.session_state.checked[i] = True
         st.rerun()
-
-    st.markdown("---")
 
     df["checked"] = st.session_state.checked
     checked_indices = [i for i, val in enumerate(df["checked"], 1) if val]
@@ -60,48 +58,49 @@ if uploaded_file is not None:
     unchecked_count = df["checked"].value_counts().get(False, 0)
     st.markdown(f"**残り: {unchecked_count} 工程**")
 
-    def render_row(idx, row):
-        e, attr, sp, effect = get_extra_info_row(row["item"])
-        col1, col2, col3, col4, col5 = st.columns([2, 1, 1, 2, 3])
-        
-        row_color = "gray" if row["checked"] else "black"
-
-        with col1:
-            if not row["checked"] and idx == first_unchecked:
-                if st.button(f"{idx}. {row['item']}", key=idx):
-                    st.session_state.checked[idx - 1] = True
-                    st.rerun()
-            else:
-                st.markdown(f"<span style='color: {row_color}; white-space: pre-wrap;'>{idx}. {row['item']}</span>", unsafe_allow_html=True)
-
-        with col2:
-            st.markdown(f"<span style='color: lightgray;'>{e}</span>", unsafe_allow_html=True)
-        with col3:
-            st.markdown(f"<span style='color: lightgray;'>{attr}</span>", unsafe_allow_html=True)
-        with col4:
-            st.markdown(f"<span style='color: lightgray;'>{sp}</span>", unsafe_allow_html=True)
-        with col5:
-            st.markdown(f"<span style='color: lightgray;'>{effect}</span>", unsafe_allow_html=True)
-
-    st.markdown("#### 工程リスト")
-    st.markdown("| 工程 | E | 属性 | SP | 効果 |", unsafe_allow_html=True)
-    st.markdown("|:------|:----|:-----|:-----|:------|", unsafe_allow_html=True)
-
-    for idx, row in sub_df_display.iterrows():
-        render_row(idx, row)
+    def display_rows(df_segment):
+        for idx, row in df_segment.iterrows():
+            extra = get_extra_info(row["item"])
+            with st.container():
+                cols = st.columns([2, 1.2, 1.2, 1.2, 2.5])
+                label = f"{idx}. {row['item']}"
+                if row["checked"]:
+                    cols[0].markdown(f"<span style='color: gray'>{label}</span>", unsafe_allow_html=True)
+                    cols[1].markdown(f"<span style='color: gray'>{extra['E']}</span>", unsafe_allow_html=True)
+                    cols[2].markdown(f"<span style='color: gray'>{extra['属性']}</span>", unsafe_allow_html=True)
+                    cols[3].markdown(f"<span style='color: gray'>{extra['SP']}</span>", unsafe_allow_html=True)
+                    cols[4].markdown(f"<span style='color: gray'>{extra['効果']}</span>", unsafe_allow_html=True)
+                elif idx == first_unchecked:
+                    if cols[0].button(label, key=idx):
+                        st.session_state.checked[idx - 1] = True
+                        st.rerun()
+                    cols[1].markdown(extra['E'])
+                    cols[2].markdown(extra['属性'])
+                    cols[3].markdown(extra['SP'])
+                    cols[4].markdown(extra['効果'])
+                else:
+                    cols[0].markdown(label)
+                    cols[1].markdown(extra['E'])
+                    cols[2].markdown(extra['属性'])
+                    cols[3].markdown(extra['SP'])
+                    cols[4].markdown(extra['効果'])
 
     if start > 1:
-        st.markdown("---")
-        with st.expander("欄外5件（前）"):
+        with st.expander("欄外5件 上"):
             extra_top_df = df.loc[max(1, start - 5):start - 1]
-            for idx, row in extra_top_df.iterrows():
-                render_row(idx, row)
+            display_rows(extra_top_df)
+
+    st.markdown("### 表示中のリスト")
+    header_cols = st.columns([2, 1.2, 1.2, 1.2, 2.5])
+    headers = ["項目", "E", "属性", "SP", "効果"]
+    for col, header in zip(header_cols, headers):
+        col.markdown(f"**{header}**")
+    display_rows(sub_df_display)
 
     if end < len(df):
-        with st.expander("欄外5件（後）"):
+        with st.expander("欄外5件 下"):
             extra_bottom_df = df.loc[end + 1:min(end + 5, len(df))]
-            for idx, row in extra_bottom_df.iterrows():
-                render_row(idx, row)
+            display_rows(extra_bottom_df)
 
     if st.button("リセット", help="チェック状況をリセット"):
         st.session_state.checked = [False] * len(df)
