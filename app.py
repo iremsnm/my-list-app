@@ -25,6 +25,8 @@ if uploaded_file is not None:
         for i in range(jump_to - 1):
             st.session_state.checked[i] = True
         st.rerun()
+    st.markdown("---")  # ← ジャンプボタンの下に区切り線
+    
 
     # チェック状態を反映
     df["checked"] = st.session_state.checked
@@ -58,6 +60,7 @@ if uploaded_file is not None:
     if st.button("リセット", help="チェック状況をリセット"):
         st.session_state.checked = [False] * len(df)
         st.rerun()
+    st.markdown("---")  # ← リセットボタンの下に区切り線
 
     # --- 保存処理 ---
     japan_tz = pytz.timezone('Asia/Tokyo')
