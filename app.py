@@ -26,28 +26,22 @@ if uploaded_file is not None:
 
     df["checked"] = st.session_state.checked
 
-    st.markdown("---")
-
     show_extra_info = st.toggle("副原料の追加情報を表示", value=True)
 
-    def get_extra_info_row(item):
-        if not show_extra_info or sub_df.empty or item not in sub_df.index:
-            return None
-        match = sub_df.loc[item]
-        return {
-            "E": match["E"],
-            "属性": match["属性"],
-            "SP": match["SP"],
-            "効果": match["効果"]
-        }
+    def get_extra_info(item):
+        if not show_extra_info or sub_df.empty:
+            return ""
+        if item in sub_df.index:
+            match = sub_df.loc[item]
+            return f"属性: {match['属性']}  |  E: {match['E']}<br><b>SP:</b> {match['SP']}  |  <b>効果:</b> {match['効果']}"
+        return ""
 
+    # ジャンプ機能
     jump_to = st.number_input("行番号を指定してジャンプ", min_value=1, max_value=len(df), step=1)
     if st.button("ジャンプ", key="jump_button"):
         for i in range(jump_to - 1):
             st.session_state.checked[i] = True
         st.rerun()
-
-    st.markdown("---")
 
     df["checked"] = st.session_state.checked
     checked_indices = [i for i, val in enumerate(df["checked"], 1) if val]
@@ -65,51 +59,45 @@ if uploaded_file is not None:
     unchecked_count = df["checked"].value_counts().get(False, 0)
     st.markdown(f"**残り: {unchecked_count} 工程**")
 
-    def render_item_block(df_block):
-        for idx, row in df_block.iterrows():
-            checked = row["checked"]
-            item = row["item"]
-            extra_info = get_extra_info_row(item)
+    def render_item_card(idx, row):
+        col1, col2 = st.columns([1, 3])
+        with col1:
+            if not row["checked"] and idx == first_unchecked:
+                if st.button(f"{idx}. {row['item']}", key=f"btn_{idx}", use_container_width=True):
+                    st.session_state.checked[idx - 1] = True
+                    st.rerun()
+            else:
+                st.markdown("&nbsp;", unsafe_allow_html=True)
+        with col2:
+            checked_class = "color: gray;" if row["checked"] else ""
+            info_html = get_extra_info(row["item"])
+            st.markdown(f"""
+                <div style='border: 1px solid #ddd; border-radius: 8px; padding: 8px; margin-bottom: 6px; {checked_class}'>
+                    <strong>{idx}. {row['item']}</strong><br>
+                    <span style='font-size: 0.85em;'>{info_html}</span>
+                </div>
+            """, unsafe_allow_html=True)
 
-            col1, col2 = st.columns([2, 5])
-            with col1:
-                if checked:
-                    st.markdown(f"<span style='color: gray;'>{idx}. {item}</span>", unsafe_allow_html=True)
-                elif idx == first_unchecked:
-                    if st.button(f"{idx}. {item}", key=idx, use_container_width=True):
-                        st.session_state.checked[idx - 1] = True
-                        st.rerun()
-                else:
-                    st.markdown(f"{idx}. {item}", unsafe_allow_html=True)
-
-            with col2:
-                if show_extra_info and extra_info:
-                    style = "color: gray;" if checked else "color: lightgray;"
-                    st.markdown(
-                        f"<div style='{style}'>E: {extra_info['E']} | 属性: {extra_info['属性']} | SP: {extra_info['SP']} | 効果: {extra_info['効果']}</div>",
-                        unsafe_allow_html=True
-                    )
-                else:
-                    st.markdown("")  # 表示なし
+    for idx, row in sub_df_display.iterrows():
+        render_item_card(idx, row)
 
     if start > 1:
-        with st.expander("欄外5件（上）"):
+        with st.expander("欄外5件（前）"):
             extra_top_df = df.loc[max(1, start - 5):start - 1]
-            render_item_block(extra_top_df)
-
-    render_item_block(sub_df_display)
+            for idx, row in extra_top_df.iterrows():
+                render_item_card(idx, row)
 
     if end < len(df):
-        with st.expander("欄外5件（下）"):
+        with st.expander("欄外5件（後）"):
             extra_bottom_df = df.loc[end + 1:min(end + 5, len(df))]
-            render_item_block(extra_bottom_df)
+            for idx, row in extra_bottom_df.iterrows():
+                render_item_card(idx, row)
 
     if st.button("リセット", help="チェック状況をリセット"):
         st.session_state.checked = [False] * len(df)
         st.rerun()
 
-    st.markdown("---")
-
+    # 保存
     japan_tz = pytz.timezone('Asia/Tokyo')
     now = datetime.now(japan_tz).strftime("%Y%m%d_%H-%M-%S")
     filename = f"check_state_{now}.json"
@@ -123,6 +111,7 @@ if uploaded_file is not None:
         mime="application/json"
     )
 
+    # 読み込み
     json_file = st.file_uploader("中途データ読込み", type=["json"], key="json")
     if json_file is not None:
         json_str = StringIO(json_file.getvalue().decode("utf-8")).read()
@@ -137,7 +126,6 @@ if uploaded_file is not None:
 
     st.markdown("---")
     st.markdown("### count")
-
     total_counts = df["item"].value_counts().rename("必要数")
     checked_counts = df[df["checked"]]["item"].value_counts().rename("チェック済み")
     summary_df = pd.concat([total_counts, checked_counts], axis=1).fillna(0).astype(int)
