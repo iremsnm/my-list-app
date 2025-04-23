@@ -35,9 +35,7 @@ if uploaded_file is not None:
             return ""
         if item in sub_df.index:
             match = sub_df.loc[item]
-            # 内容が長い場合、省略記号を使用
-            extra_info = f"E: {match['E'][:10]}... | 属性: {match['属性'][:10]}... | SP: {match['SP'][:10]}... | 効果: {match['効果'][:10]}..."
-            return f"<span style='color: lightgray;'>{extra_info}</span>"
+            return f"E: {match['E']}, 属性: {match['属性']}, SP: {match['SP']}, 効果: {match['効果']}"
         return ""
 
     # --- ジャンプ機能 ---
@@ -80,15 +78,24 @@ if uploaded_file is not None:
     for idx, row in sub_df_display.iterrows():
         base_text = f"{idx}. {row['item']}"
         extra_info_html = get_extra_info(row["item"])
-        full_html = base_text + " " + extra_info_html
 
-        if row["checked"]:
-            st.markdown(f"<span style='color: gray; white-space: pre-wrap;'>{full_html}</span>", unsafe_allow_html=True)
-        # チェックボタン表示
-        if idx == first_unchecked:
-            if st.button(base_text, key=idx):
-                st.session_state.checked[idx - 1] = True
-                st.rerun()
+        # リスト項目の横に情報を表示するため、列を作成
+        col1, col2 = st.columns([2, 4])  # 2:リスト、4:詳細情報
+        with col1:
+            # リスト項目
+            if row["checked"]:
+                st.markdown(f"<span style='color: gray;'>{base_text}</span>", unsafe_allow_html=True)
+            elif idx == first_unchecked:
+                if st.button(base_text, key=idx):
+                    st.session_state.checked[idx - 1] = True
+                    st.rerun()
+            else:
+                st.markdown(base_text)
+        
+        with col2:
+            # 詳細情報を横に表示
+            if extra_info_html:
+                st.markdown(f"<span style='color: lightgray;'>{extra_info_html}</span>", unsafe_allow_html=True)
 
     # --- 下側の追加表示 ---
     if end < len(df):
