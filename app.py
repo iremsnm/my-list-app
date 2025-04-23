@@ -107,7 +107,7 @@ if uploaded_file is not None:
     summary_df = pd.concat([total_counts, checked_counts], axis=1).fillna(0).astype(int)
     
     # 残数列を追加
-    summary_df["残"] = summary_df["合計件数"] - summary_df["チェック済み件数"]
+    summary_df["残"] = summary_df["必要数"] - summary_df["チェック済み"]
     
     # インデックスを項目として列に戻す
     summary_df = summary_df.reset_index().rename(columns={"index": "項目"})
