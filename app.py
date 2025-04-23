@@ -49,7 +49,7 @@ if uploaded_file is not None:
 
     # --- 上側の追加表示 ---
     if start > 1:
-        with st.expander("⬆️ 上に5件表示"):
+        with st.expander("欄外5件"):
             extra_top_df = df.loc[max(1, start - 5):start - 1]
             for idx, row in extra_top_df.iterrows():
                 text = f"{idx}. {row['item']}"
@@ -72,7 +72,7 @@ if uploaded_file is not None:
 
     # --- 下側の追加表示 ---
     if end < len(df):
-        with st.expander("⬇️ 下に5件表示"):
+        with st.expander("欄外5件"):
             extra_bottom_df = df.loc[end + 1:min(end + 5, len(df))]
             for idx, row in extra_bottom_df.iterrows():
                 text = f"{idx}. {row['item']}"
