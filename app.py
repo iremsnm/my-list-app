@@ -7,6 +7,7 @@ import pytz
 
 st.title("check list")
 
+# ファイルアップロード
 uploaded_file = st.file_uploader("CSVファイルをアップロードしてください", type=["csv"])
 sub_material_file = st.file_uploader("副原料リストをアップロードしてください", type=["csv"], key="sub_material")
 
@@ -47,6 +48,7 @@ if uploaded_file is not None:
 
     st.markdown("---")
 
+    # チェック状態を反映
     df["checked"] = st.session_state.checked
     checked_indices = [i for i, val in enumerate(df["checked"], 1) if val]
     latest_checked = checked_indices[-1] if checked_indices else 1
@@ -75,36 +77,31 @@ if uploaded_file is not None:
                     st.markdown(full_text, unsafe_allow_html=True)
 
     # --- メイン表示 ---
-    for idx, row in sub_df_display.iterrows():
-        base_text = f"{idx}. {row['item']}"
-        extra_info_html = get_extra_info(row["item"])
-        full_html = base_text + " " + extra_info_html
+    col1, col2 = st.columns([1, 2])  # カラムを2分割
 
-        # 横並びレイアウト
-        col1, col2 = st.columns([3, 7])  # レイアウトを調整
-        with col1:
+    with col1:  # 左側はリスト
+        for idx, row in sub_df_display.iterrows():
+            base_text = f"{idx}. {row['item']}"
+            extra_info_html = get_extra_info(row["item"])
+            full_html = base_text + " " + extra_info_html
+
             if row["checked"]:
-                st.markdown(f"<span style='color: gray;'>{base_text}</span>", unsafe_allow_html=True)
-            else:
-                if idx == first_unchecked:
-                    if st.button(base_text, key=idx):
-                        st.session_state.checked[idx - 1] = True
-                        st.rerun()
-                else:
-                    st.markdown(base_text)
+                st.markdown(f"<span style='color: gray; white-space: pre-wrap;'>{full_html}</span>", unsafe_allow_html=True)
+            elif idx == first_unchecked:
+                if st.button(base_text, key=idx):
+                    st.session_state.checked[idx - 1] = True
+                    st.rerun()
+    
+    # --- チェックリスト状態と副原料情報を別シートに分けて表示 ---
+    with col2:  # 右側は情報表示
+        st.markdown("### チェックリスト状態")
+        checklist_df = df[['item', 'checked']].copy()
+        checklist_df['checked'] = checklist_df['checked'].apply(lambda x: '✔️' if x else '❌')
+        st.dataframe(checklist_df)
 
-        with col2:
-            if not sub_df.empty and row["item"] in sub_df.index:
-                match = sub_df.loc[row['item']]
-                extra_info = f"E: {match['E']}, 属性: {match['属性']}, SP: {match['SP']}, 効果: {match['効果']}"
-                if row["checked"]:
-                    st.markdown(f"<span style='color: gray;'>{extra_info}</span>", unsafe_allow_html=True)
-                else:
-                    st.markdown(extra_info)
-
-    # 情報をボタンの下に薄い文字で表示
-    if show_extra_info:
-        st.markdown(get_extra_info(row["item"]), unsafe_allow_html=True)
+        st.markdown("### 副原料の効果")
+        if not sub_df.empty:
+            st.dataframe(sub_df[['E', '属性', 'SP', '効果']])
 
     # --- 下側の追加表示 ---
     if end < len(df):
