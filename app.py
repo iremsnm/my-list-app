@@ -48,6 +48,8 @@ if uploaded_file is not None:
             st.session_state.checked[i] = True
         st.rerun()
 
+    st.markdown("---")
+
     df["checked"] = st.session_state.checked
     checked_indices = [i for i, val in enumerate(df["checked"], 1) if val]
     latest_checked = checked_indices[-1] if checked_indices else 1
@@ -66,26 +68,29 @@ if uploaded_file is not None:
 
     def render_card(idx, row):
         extra_info = get_extra_info(row["item"])
+        checked = row["checked"]
+        card_color = "#f0f0f0" if checked else "#ffffff"
+        text_color = "gray" if checked else "black"
+
         with st.container():
-            col1, col2 = st.columns([2, 3])
-            with col1:
-                if row["checked"]:
-                    st.markdown(f"<div style='padding: 10px; background-color: #f0f0f0; color: gray; border-radius: 10px;'>✅ {idx}. {row['item']}</div>", unsafe_allow_html=True)
-                else:
-                    if st.button(f"✅ {idx}. {row['item']}", key=f"card_{idx}"):
-                        st.session_state.checked[idx - 1] = True
-                        st.rerun()
-            with col2:
+            cols = st.columns([2, 3])
+            with cols[0]:
+                if st.button(f"{idx}. {row['item']}", key=f"btn_{idx}", use_container_width=True):
+                    st.session_state.checked[idx - 1] = True
+                    st.rerun()
+            with cols[1]:
                 if show_extra_info and extra_info:
-                    color = "gray" if row["checked"] else "black"
-                    st.markdown(f"""
-                    <div style='border: 1px solid #ccc; border-radius: 10px; padding: 10px; color: {color};'>
-                        <strong>E:</strong> {extra_info['E']}<br>
-                        <strong>属性:</strong> {extra_info['属性']}<br>
-                        <strong>SP:</strong> {extra_info['SP']}<br>
-                        <strong>効果:</strong> {extra_info['効果']}<br>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    st.markdown(
+                        f"""
+                        <div style='color:{text_color}; font-size: small;'>
+                        <b>E:</b> {extra_info['E']}<br>
+                        <b>属性:</b> {extra_info['属性']}<br>
+                        <b>SP:</b> {extra_info['SP']}<br>
+                        <b>効果:</b> {extra_info['効果']}
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
 
     if start > 1:
         with st.expander("欄外5件"):
