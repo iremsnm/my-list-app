@@ -79,7 +79,7 @@ if uploaded_file is not None:
     buffer = BytesIO(json_bytes)
 
     st.download_button(
-        label="中途データを生成・保存",
+        label="一時保存",
         data=buffer,
         file_name=filename,
         mime="application/json"
