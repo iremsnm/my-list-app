@@ -27,7 +27,7 @@ if uploaded_file is not None:
         st.rerun()
         
     # 余白を設定
-    st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True) 
+    st.markdown("---")
     
 
     # チェック状態を反映
@@ -64,7 +64,7 @@ if uploaded_file is not None:
         st.rerun()
         
     # 余白を設定
-    st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True) 
+    st.markdown("---")
 
     
     # --- 保存処理 ---
@@ -92,7 +92,8 @@ if uploaded_file is not None:
             st.rerun()
         else:
             st.warning("JSONとCSVの行数が一致しません。")
-            
+
+    
     # --- 集計表の表示 ---
     st.markdown("---")
     st.markdown("### count")
