@@ -6,7 +6,6 @@ from datetime import datetime
 import pytz
 
 st.set_page_config(layout="wide")
-
 st.title("check list")
 
 uploaded_file = st.file_uploader("CSVファイルをアップロードしてください", type=["csv"])
@@ -29,13 +28,18 @@ if uploaded_file is not None:
 
     st.markdown("---")
 
-    show_extra_info = st.checkbox("副原料の追加情報を表示", value=True)
+    show_extra_info = st.toggle("副原料の追加情報を表示", value=True)
 
     def get_extra_info_row(item):
         if not show_extra_info or sub_df.empty or item not in sub_df.index:
-            return ["", "", "", ""]
+            return None
         match = sub_df.loc[item]
-        return [match['E'], match['属性'], match['SP'], match['効果']]
+        return {
+            "E": match["E"],
+            "属性": match["属性"],
+            "SP": match["SP"],
+            "効果": match["効果"]
+        }
 
     jump_to = st.number_input("行番号を指定してジャンプ", min_value=1, max_value=len(df), step=1)
     if st.button("ジャンプ", key="jump_button"):
@@ -68,23 +72,25 @@ if uploaded_file is not None:
             extra_info = get_extra_info_row(item)
 
             col1, col2 = st.columns([2, 5])
-
             with col1:
                 if checked:
                     st.markdown(f"<span style='color: gray;'>{idx}. {item}</span>", unsafe_allow_html=True)
                 elif idx == first_unchecked:
-                    if st.button(f"{idx}. {item}", key=idx, help="チェックする", use_container_width=True):
+                    if st.button(f"{idx}. {item}", key=idx, use_container_width=True):
                         st.session_state.checked[idx - 1] = True
                         st.rerun()
                 else:
                     st.markdown(f"{idx}. {item}", unsafe_allow_html=True)
 
             with col2:
-                style = "color: gray;" if checked else "color: lightgray;"
-                st.markdown(
-                    f"<div style='{style}'>E: {extra_info[0]} | 属性: {extra_info[1]} | SP: {extra_info[2]} | 効果: {extra_info[3]}</div>",
-                    unsafe_allow_html=True
-                )
+                if show_extra_info and extra_info:
+                    style = "color: gray;" if checked else "color: lightgray;"
+                    st.markdown(
+                        f"<div style='{style}'>E: {extra_info['E']} | 属性: {extra_info['属性']} | SP: {extra_info['SP']} | 効果: {extra_info['効果']}</div>",
+                        unsafe_allow_html=True
+                    )
+                else:
+                    st.markdown("")  # 表示なし
 
     if start > 1:
         with st.expander("欄外5件（上）"):
