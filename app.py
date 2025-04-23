@@ -21,11 +21,36 @@ if uploaded_file is not None:
         st.session_state.checked = [False] * len(df)
     st.markdown("---")
 
-
     df["checked"] = st.session_state.checked
 
-    show_extra_info = st.toggle("副原料の追加情報を表示", value=True)
+    # 表示範囲の決定
+    checked_indices = [i for i, val in enumerate(df["checked"], 1) if val]
+    latest_checked = checked_indices[-1] if checked_indices else 1
 
+    try:
+        first_unchecked = df.index[df["checked"] == False][0]
+    except IndexError:
+        first_unchecked = None
+
+    start = max(latest_checked - 4, 1)
+    end = min((first_unchecked or latest_checked) + 3, len(df))
+    display_df = df.loc[start:end]
+
+    # --- ジャンプ機能 ---
+    with st.container():
+        jump_to = st.number_input("行番号を指定してジャンプ", min_value=1, max_value=len(df), step=1)
+        if st.button("ジャンプ", key="jump_button"):
+            for i in range(jump_to - 1):
+                st.session_state.checked[i] = True
+            st.rerun()
+    st.markdown("---")
+
+    # トグルの位置を変更！
+    show_extra_info = st.toggle("追加情報を表示", value=True)
+
+    st.markdown(f"残り **{df['checked'].value_counts().get(False, 0)}** step")
+
+    # 表示用関数
     def get_extra_info_html(item):
         if not show_extra_info or sub_df.empty or item not in sub_df.index:
             return ""
@@ -38,31 +63,6 @@ if uploaded_file is not None:
             f"<b>効果:</b> {match['効果']}</div>"
         )
 
-    # 表示範囲の決定
-    checked_indices = [i for i, val in enumerate(df["checked"], 1) if val]
-    latest_checked = checked_indices[-1] if checked_indices else 1
-
-    try:
-        first_unchecked = df.index[df["checked"] == False][0]
-    except IndexError:
-        first_unchecked = None
-
-    start = max(latest_checked - 4, 1)
-    end = min((first_unchecked or latest_checked) + 4, len(df))
-    display_df = df.loc[start:end]
-
-    # --- ジャンプ機能 ---
-    with st.container():
-        jump_to = st.number_input("行番号を指定してジャンプ", min_value=1, max_value=len(df), step=1)
-        if st.button("ジャンプ", key="jump_button"):
-            for i in range(jump_to - 1):
-                st.session_state.checked[i] = True
-            st.rerun()
-    st.markdown("---")
-
-    st.markdown(f"残り **{df['checked'].value_counts().get(False, 0)}** step")
-
-    # 表示用関数
     def render_item_card(idx, row):
         bg = "#f9f9f9"
         border = "solid 1px #ccc"
@@ -103,12 +103,6 @@ if uploaded_file is not None:
                 st.markdown(render_item_card(idx, row), unsafe_allow_html=True)
     st.markdown("---")
 
-
-    if st.button("リセット", help="チェックをリセット"):
-        st.session_state.checked = [False] * len(df)
-        st.rerun()
-    st.markdown("---")
-
     now = datetime.now(pytz.timezone("Asia/Tokyo")).strftime("%Y%m%d_%H-%M-%S")
     json_bytes = json.dumps(st.session_state.checked, indent=2, ensure_ascii=False).encode("utf-8")
     st.download_button("一時保存", data=BytesIO(json_bytes), file_name=f"check_state_{now}.json")
@@ -130,3 +124,8 @@ if uploaded_file is not None:
     summary = pd.concat([total, checked], axis=1).fillna(0).astype(int)
     summary["残"] = summary["必要数"] - summary["チェック済み"]
     st.dataframe(summary.reset_index().rename(columns={"index": "項目"}), use_container_width=True)
+    st.markdown("---")
+
+    if st.button("リセット", help="チェックをリセット"):
+        st.session_state.checked = [False] * len(df)
+        st.rerun()
