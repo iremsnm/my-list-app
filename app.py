@@ -35,12 +35,12 @@ if uploaded_file is not None:
             return ""
         if item in sub_df.index:
             match = sub_df.loc[item]
-            # 折り返し表示を避けるため、省略処理を行う
+            # 各カラムの存在を確認してからアクセス
             truncated_info = {
-                "E": match['E'][:10],  # 最初の10文字だけ表示
-                "属性": match['属性'][:10],
-                "SP": match['SP'][:10],
-                "効果": match['効果'][:10]
+                "E": match.get('E', '')[:10],  # 'E'が存在しない場合は空文字を返す
+                "属性": match.get('属性', '')[:10],
+                "SP": match.get('SP', '')[:10],
+                "効果": match.get('効果', '')[:10]
             }
             # 省略表示を施したHTML表にまとめる
             return f"<span style='color: lightgray;'>（E: {truncated_info['E']}..., 属性: {truncated_info['属性']}..., SP: {truncated_info['SP']}..., 効果: {truncated_info['効果']}...）</span>"
@@ -95,6 +95,10 @@ if uploaded_file is not None:
             if st.button(base_text, key=idx):
                 st.session_state.checked[idx - 1] = True
                 st.rerun()
+
+    # 情報をボタンの下に薄い文字で表示
+    if show_extra_info:
+        st.markdown(get_extra_info(row["item"]), unsafe_allow_html=True)
 
     # --- 下側の追加表示 ---
     if end < len(df):
