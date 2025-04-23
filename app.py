@@ -127,7 +127,9 @@ if uploaded_file is not None:
         else:
             st.warning("行数が一致しません")
 
-    st.markdown("count")
+
+    st.markdown("---")
+    st.subheader("count")
     total = df["item"].value_counts().rename("必要数")
     checked = df[df["checked"]]["item"].value_counts().rename("チェック済み")
     summary = pd.concat([total, checked], axis=1).fillna(0).astype(int)
