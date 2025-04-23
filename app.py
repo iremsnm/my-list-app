@@ -95,7 +95,7 @@ if uploaded_file is not None:
             
     # --- 集計表の表示 ---
     st.markdown("---")
-    st.markdown("### カウント")
+    st.markdown("### count")
     
     # 全体の件数
     total_counts = df["item"].value_counts().rename("必要数")
