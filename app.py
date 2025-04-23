@@ -19,7 +19,7 @@ if uploaded_file is not None:
     df["checked"] = st.session_state.checked
 
     # --- ジャンプ機能 ---
-    jump_to = st.number_input("ジャンプ", min_value=1, max_value=len(df), step=1)
+    jump_to = st.number_input(min_value=1, max_value=len(df), step=1)
     if st.button("ジャンプ", key="jump_button"):
         # 指定行より前を全てチェック済みに
         for i in range(jump_to - 1):
