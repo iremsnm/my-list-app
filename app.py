@@ -82,7 +82,7 @@ if uploaded_file is not None:
         # リスト項目の横に情報を表示するため、列を作成
         col1, col2 = st.columns([2, 4])  # 2:リスト、4:詳細情報
         with col1:
-            # リスト項目
+            # チェック済みの場合はテキストをグレーアウト
             if row["checked"]:
                 st.markdown(f"<span style='color: gray;'>{base_text}</span>", unsafe_allow_html=True)
             elif idx == first_unchecked:
@@ -93,9 +93,11 @@ if uploaded_file is not None:
                 st.markdown(base_text)
         
         with col2:
-            # 詳細情報を横に表示
-            if extra_info_html:
-                st.markdown(f"<span style='color: lightgray;'>{extra_info_html}</span>", unsafe_allow_html=True)
+            # 詳細情報を横に表示（チェック済みの場合もグレーアウト）
+            if row["checked"]:
+                st.markdown(f"<span style='color: gray;'>{extra_info_html}</span>", unsafe_allow_html=True)
+            else:
+                st.markdown(extra_info_html, unsafe_allow_html=True)
 
     # --- 下側の追加表示 ---
     if end < len(df):
