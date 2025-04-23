@@ -9,6 +9,10 @@ st.title("check list")
 
 uploaded_file = st.file_uploader("CSVファイルをアップロードしてください", type=["csv"])
 
+# 副原料リストを事前読み込み
+sub_df = pd.read_csv("/mnt/data/副原料リスト.csv")
+sub_df = sub_df.set_index("副原料")
+
 if uploaded_file is not None:
     df = pd.read_csv(uploaded_file, header=None, names=["item"])
     df.index = df.index + 1
@@ -42,7 +46,7 @@ if uploaded_file is not None:
 
     start = max(latest_checked - 5, 1)
     end = min((first_unchecked or latest_checked) + 5, len(df))
-    sub_df = df.loc[start:end]
+    sub_df_display = df.loc[start:end]
 
     unchecked_count = df["checked"].value_counts().get(False, 0)
     st.markdown(f"**残り: {unchecked_count} 工程**")
@@ -59,16 +63,23 @@ if uploaded_file is not None:
                     st.markdown(text)
 
     # メイン表示
-    for idx, row in sub_df.iterrows():
-        text = f"{idx}. {row['item']}"
+    for idx, row in sub_df_display.iterrows():
+        base_text = f"{idx}. {row['item']}"
+        extra_info = ""
+        if row['item'] in sub_df.index:
+            match = sub_df.loc[row['item']]
+            extra_info = f"\n - E: {match['E']}\n - 属性: {match['属性']}\n - SP: {match['SP']}\n - 効果: {match['効果']}"
+
+        full_text = base_text + extra_info
+
         if row["checked"]:
-            st.markdown(f"<span style='color: gray;'>{text}</span>", unsafe_allow_html=True)
+            st.markdown(f"<span style='color: gray; white-space: pre-wrap;'>{full_text}</span>", unsafe_allow_html=True)
         elif idx == first_unchecked:
-            if st.button(text, key=idx):
+            if st.button(base_text, key=idx):
                 st.session_state.checked[idx - 1] = True
                 st.rerun()
         else:
-            st.markdown(text)
+            st.markdown(full_text)
 
     # --- 下側の追加表示 ---
     if end < len(df):
