@@ -130,4 +130,5 @@ if uploaded_file is not None:
                 st.session_state.checked = loaded
                 st.rerun()
             else:
-                st.warning("行数
+                st.warning("行数が一致しません")
+
