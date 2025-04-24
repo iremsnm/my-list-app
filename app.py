@@ -35,51 +35,50 @@ if uploaded_file is not None:
     end = min((first_unchecked or latest_checked) + 3, len(df))
     display_df = df.loc[start:end]
 
-    tab1, tab2 = st.tabs(["✅ チェックリスト", "📊 分析"])
+    tab1, tab2 = st.tabs(["✅ チェックリスト", "📊 集計情報"])
 
     with tab1:
+        st.markdown(f"残り **{df['checked'].value_counts().get(False, 0)}** step")
+
+        def render_item_card(idx, row):
+            bg = "#f9f9f9"
+            border = "solid 1px #ccc"
+            color = "gray" if row["checked"] else "black"
+
+            if row["checked"] and idx != latest_checked:
+                previous_checked = checked_indices[:-1][-3:]
+                if idx in previous_checked:
+                    bg = "#d3ffd3"
+            if idx == latest_checked:
+                bg = "#d3f7ff"
+
+            extra_html = ""
+            if row["item"] in sub_df.index:
+                match = sub_df.loc[row["item"]]
+                extra_html = (
+                    f"<div class='extra-info' style='display:none;margin-top:5px;color:#666;font-size:0.85em;'>"
+                    f"<b>E:</b> {match['E']} &nbsp;|&nbsp; "
+                    f"<b>属性:</b> {match['属性']} &nbsp;|&nbsp; "
+                    f"<b>SP:</b> {match['SP']} &nbsp;|&nbsp; "
+                    f"<b>効果:</b> {match['効果']}</div>"
+                )
+
+            html = f'''
+            <div style="background:{bg};border-radius:8px;border:{border};padding:12px;margin-bottom:10px;cursor:pointer;"
+                 onclick="var info = this.querySelector('.extra-info'); info.style.display = info.style.display === 'none' ? 'block' : 'none';">
+                <div style="color:{color};font-weight:bold;">{idx}. {row['item']}</div>
+                {extra_html}
+            </div>
+            '''
+            return html
+
         with st.container():
             jump_to = st.number_input("行番号を指定してジャンプ", min_value=1, max_value=len(df), step=1)
             if st.button("ジャンプ", key="jump_button"):
                 for i in range(jump_to - 1):
                     st.session_state.checked[i] = True
                 st.rerun()
-        st.markdown(f"残り **{df['checked'].value_counts().get(False, 0)}** step")
-
-        def get_extra_info_html(item):
-            if sub_df.empty or item not in sub_df.index:
-                return ""
-            match = sub_df.loc[item]
-            return f"""
-                <details style="margin-top: 4px;">
-                  <summary style="color: #888; font-size: 0.85em;">詳細情報</summary>
-                  <div style="color: #666; font-size: 0.85em;">
-                    <b>E:</b> {match['E']}<br>
-                    <b>属性:</b> {match['属性']}<br>
-                    <b>SP:</b> {match['SP']}<br>
-                    <b>効果:</b> {match['効果']}
-                  </div>
-                </details>
-            """
-
-        def render_item_card(idx, row):
-            bg = "#f9f9f9"
-            border = "solid 1px #ccc"
-            color = "gray" if row["checked"] else "black"
-            
-            if row["checked"] and idx != latest_checked:
-                if idx in checked_indices[:-1][-3:]:
-                    bg = "#d3ffd3"
-            if idx == latest_checked:
-                bg = "#d3f7ff"
-
-            html = f"""
-            <div style='background:{bg};border-radius:8px;border:{border};padding:12px;margin-bottom:10px;'>
-                <div style='color:{color};font-weight:bold;'>{idx}. {row['item']}</div>
-                {get_extra_info_html(row['item'])}
-            </div>
-            """
-            return html
+        st.markdown("---")
 
         if start > 1:
             with st.expander("前の5件"):
@@ -98,9 +97,36 @@ if uploaded_file is not None:
             with st.expander("次の5件"):
                 for idx, row in df.loc[end + 1:min(end + 5, len(df))].iterrows():
                     st.markdown(render_item_card(idx, row), unsafe_allow_html=True)
+        st.markdown("---")
+
+        japan_tz = pytz.timezone("Asia/Tokyo")
+        now = datetime.now(japan_tz).strftime("%Y%m%d_%H-%M-%S")
+        filename = f"check_state_{now}.json"
+        json_data = json.dumps(st.session_state.checked, indent=2, ensure_ascii=False)
+        json_bytes = json_data.encode("utf-8")
+
+        b64 = base64.b64encode(json_bytes).decode()
+        href = f'<a href="data:application/json;base64,{b64}" download="{filename}">一時保存</a>'
+        st.markdown(href, unsafe_allow_html=True)
+        st.markdown("---")
+
+        json_file = st.file_uploader("中途データ読込", type=["json"], key="json")
+        if json_file:
+            json_str = StringIO(json_file.getvalue().decode("utf-8")).read()
+            loaded = json.loads(json_str)
+            if len(loaded) == len(df):
+                st.session_state.checked = loaded
+                st.rerun()
+            else:
+                st.warning("行数が一致しません")
+        st.markdown("---")
+
+        if st.button("リセット", help="チェックをリセット"):
+            st.session_state.checked = [False] * len(df)
+            st.rerun()
 
     with tab2:
-        st.markdown("### 集計")
+        st.markdown("### 集計情報")
         total = df["item"].value_counts().rename("必要数")
         checked = df[df["checked"]]["item"].value_counts().rename("チェック済み")
         summary = pd.concat([total, checked], axis=1).fillna(0).astype(int)
@@ -111,30 +137,3 @@ if uploaded_file is not None:
             use_container_width=True,
             hide_index=True
         )
-
-    st.markdown("---")
-
-    # 保存と読み込み
-    japan_tz = pytz.timezone("Asia/Tokyo")
-    now = datetime.now(japan_tz).strftime("%Y%m%d_%H-%M-%S")
-    filename = f"check_state_{now}.json"
-    json_data = json.dumps(st.session_state.checked, indent=2, ensure_ascii=False)
-    json_bytes = json_data.encode("utf-8")
-
-    b64 = base64.b64encode(json_bytes).decode()
-    href = f'<a href="data:application/json;base64,{b64}" download="{filename}">一時保存</a>'
-    st.markdown(href, unsafe_allow_html=True)
-
-    json_file = st.file_uploader("中途データ読込", type=["json"], key="json")
-    if json_file:
-        json_str = StringIO(json_file.getvalue().decode("utf-8")).read()
-        loaded = json.loads(json_str)
-        if len(loaded) == len(df):
-            st.session_state.checked = loaded
-            st.rerun()
-        else:
-            st.warning("行数が一致しません")
-
-    if st.button("リセット", help="チェックをリセット"):
-        st.session_state.checked = [False] * len(df)
-        st.rerun()
