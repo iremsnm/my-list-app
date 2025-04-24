@@ -44,7 +44,7 @@ if uploaded_file is not None:
             st.rerun()
     st.markdown("---")
 
-    show_extra_info = st.toggle("追加情報を表示", value=True)
+    show_extra_info = st.toggle("追加情報を表示", value=False)
 
     st.markdown(f"残り **{df['checked'].value_counts().get(False, 0)}** step")
 
