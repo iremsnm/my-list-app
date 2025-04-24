@@ -109,6 +109,8 @@ if uploaded_file is not None:
         b64 = base64.b64encode(json_bytes).decode()
         href = f'<a href="data:application/json;base64,{b64}" download="{filename}">一時保存</a>'
         st.markdown(href, unsafe_allow_html=True)
+        st.markdown("---")
+        
 
         json_file = st.file_uploader("中途データ読込", type=["json"], key="json")
         if json_file:
@@ -119,6 +121,8 @@ if uploaded_file is not None:
                 st.rerun()
             else:
                 st.warning("行数が一致しません")
+        st.markdown("---")
+        
 
         if st.button("リセット", help="チェックをリセット"):
             st.session_state.checked = [False] * len(df)
