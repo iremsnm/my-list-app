@@ -28,7 +28,7 @@ if uploaded_file is not None:
     latest_checked = checked_indices[-1] if checked_indices else 1
 
     try:
-        first_unchecked = df.index[df["checked"] == True][0]
+        first_unchecked = df.index[df["checked"] == False][0]
     except IndexError:
         first_unchecked = None
 
@@ -99,8 +99,6 @@ if uploaded_file is not None:
                 st.markdown(render_item_card(idx, row), unsafe_allow_html=True)
     st.markdown("---")
 
-    # --- 保存セクション ---
-    st.subheader("チェック状態の保存")
 
     # 保存用データ生成
     japan_tz = pytz.timezone("Asia/Tokyo")
@@ -111,12 +109,11 @@ if uploaded_file is not None:
 
     # 前画面に戻れるbase64ダウンロードリンク
     b64 = base64.b64encode(json_bytes).decode()
-    href = f'<a href="data:application/json;base64,{b64}" download="{filename}">中途データ保存</a>'
+    href = f'<a href="data:application/json;base64,{b64}" download="{filename}">一時保存</a>'
     st.markdown(href, unsafe_allow_html=True)
-
-
     st.markdown("---")
-    st.subheader("保存状態の読み込み")
+
+
     json_file = st.file_uploader("中途データ読込", type=["json"], key="json")
     if json_file:
         json_str = StringIO(json_file.getvalue().decode("utf-8")).read()
@@ -126,24 +123,25 @@ if uploaded_file is not None:
             st.rerun()
         else:
             st.warning("行数が一致しません")
-
-
     st.markdown("---")
-    st.subheader("集計")
+
+
+    st.markdown("集計")
     total = df["item"].value_counts().rename("必要数")
     checked = df[df["checked"]]["item"].value_counts().rename("チェック済み")
     summary = pd.concat([total, checked], axis=1).fillna(0).astype(int)
     summary["残"] = summary["必要数"] - summary["チェック済み"]
 
-# インデックス列を非表示にする
+    # ✅ インデックス列を非表示にする
     st.dataframe(
     summary.reset_index().rename(columns={"index": "項目"}),
     use_container_width=True,
     hide_index=True
 )
-    
 
     st.markdown("---")
+
+
     if st.button("リセット", help="チェックをリセット"):
         st.session_state.checked = [False] * len(df)
         st.rerun()
