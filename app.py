@@ -20,7 +20,7 @@ if uploaded_file is not None:
     if "checked" not in st.session_state or len(st.session_state.checked) != len(df):
         st.session_state.checked = [False] * len(df)
     df["checked"] = st.session_state.checked
-    st.markdown("---")
+    st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
 
     
     tabs = st.tabs(["check list", "count"])
@@ -101,7 +101,8 @@ if uploaded_file is not None:
                 for idx, row in df.loc[end + 1:min(end + 5, len(df))].iterrows():
                     st.markdown(render_item_card(idx, row), unsafe_allow_html=True)
         st.markdown("---")
-
+        st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
+        
         # 保存処理
         japan_tz = pytz.timezone("Asia/Tokyo")
         now = datetime.now(japan_tz).strftime("%Y%m%d_%H-%M-%S")
