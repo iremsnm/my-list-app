@@ -119,7 +119,9 @@ if uploaded_file is not None:
                 st.rerun()
             else:
                 st.warning("行数が一致しません")
-
+        st.markdown("---")
+        
+        
         if st.button("リセット", help="チェックをリセット"):
             st.session_state.checked = [False] * len(df)
             st.rerun()
