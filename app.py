@@ -28,7 +28,7 @@ if uploaded_file is not None:
     latest_checked = checked_indices[-1] if checked_indices else 1
 
     try:
-        first_unchecked = df.index[df["checked"] == False][0]
+        first_unchecked = df.index[df["checked"] == True][0]
     except IndexError:
         first_unchecked = None
 
@@ -114,6 +114,7 @@ if uploaded_file is not None:
     href = f'<a href="data:application/json;base64,{b64}" download="{filename}">中途データ保存</a>'
     st.markdown(href, unsafe_allow_html=True)
 
+
     st.markdown("---")
     st.subheader("保存状態の読み込み")
     json_file = st.file_uploader("中途データ読込", type=["json"], key="json")
@@ -126,8 +127,9 @@ if uploaded_file is not None:
         else:
             st.warning("行数が一致しません")
 
+
     st.markdown("---")
-    st.subheader("count")
+    st.subheader("集計")
     total = df["item"].value_counts().rename("必要数")
     checked = df[df["checked"]]["item"].value_counts().rename("チェック済み")
     summary = pd.concat([total, checked], axis=1).fillna(0).astype(int)
@@ -139,6 +141,7 @@ if uploaded_file is not None:
     use_container_width=True,
     hide_index=True
 )
+    
 
     st.markdown("---")
     if st.button("リセット", help="チェックをリセット"):
