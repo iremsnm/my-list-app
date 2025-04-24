@@ -19,14 +19,12 @@ if uploaded_file is not None:
     df = pd.read_csv(uploaded_file, header=None, names=["item"])
     df.index += 1
 
-    # チェックリスト状態を保持
-    if "checked" not in df.columns:
-        df["checked"] = False  # checked列がない場合は作成し、初期値はFalse
+    sub_df = pd.read_csv(sub_material_file).set_index("副原料") if sub_material_file else pd.DataFrame()
 
+    # チェックリスト状態を保持
     if "checked" not in st.session_state or len(st.session_state.checked) != len(df):
         st.session_state.checked = [False] * len(df)
     
-
     # ページ内タブを作成
     tab1, tab2 = st.tabs(["チェックリスト", "集計"])
 
@@ -142,7 +140,7 @@ if uploaded_file is not None:
         summary = pd.concat([total, checked], axis=1).fillna(0).astype(int)
         summary["残"] = summary["必要数"] - summary["チェック済み"]
 
-        # ✅ インデックス列を非表示にする
+        # インデックス列を非表示にする
         st.dataframe(
             summary.reset_index().rename(columns={"index": "項目"}),
             use_container_width=True,
