@@ -21,10 +21,10 @@ if uploaded_file is not None:
         st.session_state.checked = [False] * len(df)
     df["checked"] = st.session_state.checked
 
-    tabs = st.tabs(["✅ チェックリスト", "📊 集計"])
+    tabs = st.tabs(["check list", "count"])
 
     # -------------------------------
-    # ✅ チェックリストタブ
+    # chec llist
     # -------------------------------
     with tabs[0]:
         checked_indices = [i for i, val in enumerate(df["checked"], 1) if val]
@@ -125,7 +125,7 @@ if uploaded_file is not None:
             st.rerun()
 
     # -------------------------------
-    # 📊 集計タブ
+    # count
     # -------------------------------
     with tabs[1]:
         st.markdown("集計")
