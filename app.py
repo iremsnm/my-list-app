@@ -20,7 +20,9 @@ if uploaded_file is not None:
     if "checked" not in st.session_state or len(st.session_state.checked) != len(df):
         st.session_state.checked = [False] * len(df)
     df["checked"] = st.session_state.checked
+    st.markdown("---")
 
+    
     tabs = st.tabs(["check list", "count"])
 
     # -------------------------------
